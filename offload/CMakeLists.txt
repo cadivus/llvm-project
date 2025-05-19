@@ -381,6 +381,7 @@ add_subdirectory(libomptarget)
 
 add_subdirectory(tools/offload-tblgen)
 add_subdirectory(liboffload)
+add_subdirectory(languages)
 
 # Add tests.
 add_subdirectory(test)
