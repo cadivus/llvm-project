@@ -121,6 +121,10 @@ void addOpenMPHostOffloadingArgs(const Compilation &C, const JobAction &JA,
                                  const llvm::opt::ArgList &Args,
                                  llvm::opt::ArgStringList &CmdArgs);
 
+void addOffloadViaLLVMRuntimeLibArgs(const ToolChain &TC, Compilation &C,
+                                     const llvm::opt::ArgList &Args,
+                                     llvm::opt::ArgStringList &CmdArgs);
+
 void addHIPRuntimeLibArgs(const ToolChain &TC, Compilation &C,
                           const llvm::opt::ArgList &Args,
                           llvm::opt::ArgStringList &CmdArgs);
