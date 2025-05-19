@@ -1633,6 +1633,7 @@ struct AMDGPUStreamManagerTy final
         NextQueue(0), Agent(HSAAgent) {}
 
   Error init(uint32_t InitialSize, int NumHSAQueues, int HSAQueueSize) {
+    llvm::errs() << InitialSize << " :"  << NumHSAQueues << " : " << HSAQueueSize << "\n";
     Queues = std::vector<AMDGPUQueueTy>(NumHSAQueues);
     QueueSize = HSAQueueSize;
     MaxNumQueues = NumHSAQueues;
@@ -2241,8 +2242,11 @@ struct AMDGPUDeviceTy : public GenericDeviceTy, AMDGenericDeviceTy {
       return Err;
 
     // Once the stream is synchronized, return it to stream pool and reset
-    // AsyncInfo. This is to make sure the synchronization only works for its
-    // own tasks.
+    // AsyncInfo if the queue is not persistent. This is to make sure the
+    // synchronization only works for its own tasks.
+    if (AsyncInfo.PersistentQueue)
+      return Plugin::success();
+
     AsyncInfo.Queue = nullptr;
     return AMDGPUStreamManager.returnResource(Stream);
   }
@@ -2262,8 +2266,11 @@ struct AMDGPUDeviceTy : public GenericDeviceTy, AMDGenericDeviceTy {
       return Plugin::success();
 
     // Once the stream is completed, return it to stream pool and reset
-    // AsyncInfo. This is to make sure the synchronization only works for its
-    // own tasks.
+    // AsyncInfo if the queue is not persistent. This is to make sure the
+    // synchronization only works for its own tasks.
+    if (AsyncInfo.PersistentQueue)
+      return Plugin::success();
+
     AsyncInfo.Queue = nullptr;
     return AMDGPUStreamManager.returnResource(Stream);
   }
@@ -2476,7 +2483,10 @@ struct AMDGPUDeviceTy : public GenericDeviceTy, AMDGenericDeviceTy {
 
   /// Initialize the async info for interoperability purposes.
   Error initAsyncInfoImpl(AsyncInfoWrapperTy &AsyncInfoWrapper) override {
-    // TODO: Implement this function.
+    AMDGPUStreamTy *Stream = nullptr;
+    if (auto Err = getStream(AsyncInfoWrapper, Stream))
+      return Err;
+  
     return Plugin::success();
   }
 
@@ -3339,8 +3349,9 @@ Error AMDGPUKernelTy::launchImpl(GenericDeviceTy &GenericDevice,
                                  KernelArgsTy &KernelArgs,
                                  KernelLaunchParamsTy LaunchParams,
                                  AsyncInfoWrapperTy &AsyncInfoWrapper) const {
-  if (ArgsSize != LaunchParams.Size &&
-      ArgsSize != LaunchParams.Size + getImplicitArgsSize())
+  uint32_t LaunchParamsSizePadded = utils::roundUp(LaunchParams.Size, sizeof(void*));
+  if (ArgsSize != LaunchParamsSizePadded &&
+      ArgsSize != LaunchParamsSizePadded + getImplicitArgsSize())
     return Plugin::error("Mismatch of kernel arguments size");
 
   AMDGPUPluginTy &AMDGPUPlugin =
@@ -3376,9 +3387,9 @@ Error AMDGPUKernelTy::launchImpl(GenericDeviceTy &GenericDevice,
     return Err;
 
   hsa_utils::AMDGPUImplicitArgsTy *ImplArgs = nullptr;
-  if (ArgsSize == LaunchParams.Size + getImplicitArgsSize()) {
+  if (ArgsSize == LaunchParamsSizePadded + getImplicitArgsSize()) {
     ImplArgs = reinterpret_cast<hsa_utils::AMDGPUImplicitArgsTy *>(
-        utils::advancePtr(AllArgs, LaunchParams.Size));
+        utils::advancePtr(AllArgs, LaunchParamsSizePadded));
 
     // Set the COV5+ implicit arguments to the appropriate values.
     std::memset(ImplArgs, 0, getImplicitArgsSize());

@@ -193,13 +193,16 @@ void AMDGCN::Linker::ConstructJob(Compilation &C, const JobAction &JA,
                                   const InputInfoList &Inputs,
                                   const ArgList &Args,
                                   const char *LinkingOutput) const {
+  bool UseLLVMOffload = Args.hasFlag(options::OPT_foffload_via_llvm,
+                                     options::OPT_fno_offload_via_llvm, false);
+
   if (Inputs.size() > 0 &&
       Inputs[0].getType() == types::TY_Image &&
-      JA.getType() == types::TY_Object)
+      JA.getType() == types::TY_Object && !UseLLVMOffload)
     return HIP::constructGenerateObjFileFromHIPFatBinary(C, Output, Inputs,
                                                          Args, JA, *this);
 
-  if (JA.getType() == types::TY_HIP_FATBIN)
+  if (JA.getType() == types::TY_HIP_FATBIN && !UseLLVMOffload)
     return HIP::constructHIPFatbinCommand(C, JA, Output.getFilename(), Inputs,
                                           Args, *this);
 
@@ -227,7 +230,9 @@ void HIPAMDToolChain::addClangTargetOptions(
     Action::OffloadKind DeviceOffloadingKind) const {
   HostTC.addClangTargetOptions(DriverArgs, CC1Args, DeviceOffloadingKind);
 
-  assert(DeviceOffloadingKind == Action::OFK_HIP &&
+  bool UseLLVMOffload = DriverArgs.hasFlag(options::OPT_foffload_via_llvm,
+                                           options::OPT_fno_offload_via_llvm, false);
+  assert((UseLLVMOffload || (DeviceOffloadingKind == Action::OFK_HIP)) &&
          "Only HIP offloading kinds are supported for GPUs.");
 
   CC1Args.append({"-fcuda-is-device", "-fno-threadsafe-statics"});

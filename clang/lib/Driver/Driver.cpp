@@ -1049,11 +1049,12 @@ void Driver::CreateOffloadingDeviceToolChains(Compilation &C,
         if (!TT)
           continue;
 
+	auto A = UseLLVMOffload ? (TT->isNVPTX() ? Action::OFK_Cuda : Action::OFK_HIP) : Action::OFK_OpenMP;
         auto &TC =
-            getOffloadToolChain(C.getInputArgs(), Action::OFK_OpenMP, *TT,
+            getOffloadToolChain(C.getInputArgs(), A, *TT,
                                 C.getDefaultToolChain().getTriple());
         for (StringRef Arch :
-             getOffloadArchs(C, C.getArgs(), Action::OFK_OpenMP, &TC, true))
+             getOffloadArchs(C, C.getArgs(), A, &TC, true))
           Archs.insert(Arch);
       }
 
@@ -1101,9 +1102,10 @@ void Driver::CreateOffloadingDeviceToolChains(Compilation &C,
         continue;
       }
 
-      auto &TC = getOffloadToolChain(C.getInputArgs(), Action::OFK_OpenMP, TT,
+      auto A = UseLLVMOffload ? (TT.isNVPTX() ? Action::OFK_Cuda : Action::OFK_HIP) : Action::OFK_OpenMP;
+      auto &TC = getOffloadToolChain(C.getInputArgs(), A, TT,
                                      C.getDefaultToolChain().getTriple());
-      C.addOffloadDeviceToolChain(&TC, Action::OFK_OpenMP);
+      C.addOffloadDeviceToolChain(&TC, A);
       auto It = DerivedArchs.find(TT.getTriple());
       if (It != DerivedArchs.end())
         KnownArchs[&TC] = It->second;
@@ -4550,7 +4552,8 @@ void Driver::BuildActions(Compilation &C, DerivedArgList &Args,
     if (ShouldEmitStaticLibrary(Args)) {
       LA = C.MakeAction<StaticLibJobAction>(LinkerInputs, types::TY_Image);
     } else if ((UseNewOffloadingDriver && !HIPNoRDC) ||
-               Args.hasArg(options::OPT_offload_link)) {
+               Args.hasArg(options::OPT_offload_link) || Args.hasArg(
+      options::OPT_foffload_via_llvm, options::OPT_fno_offload_via_llvm, false)) {
       LA = C.MakeAction<LinkerWrapperJobAction>(LinkerInputs, types::TY_Image);
       LA->propagateHostOffloadInfo(C.getActiveOffloadKinds(),
                                    /*BoundArch=*/nullptr);
@@ -4885,6 +4888,9 @@ Action *Driver::BuildOffloadingActions(Compilation &C,
         getFinalPhase(Args) == phases::Preprocess))
     return HostAction;
 
+  bool UseLLVMOffload = Args.hasArg(
+      options::OPT_foffload_via_llvm, options::OPT_fno_offload_via_llvm, false);
+
   ActionList OffloadActions;
   OffloadAction::DeviceDependences DDeps;
 
@@ -4905,9 +4911,9 @@ Action *Driver::BuildOffloadingActions(Compilation &C,
     types::ID InputType = Input.first;
     const Arg *InputArg = Input.second;
 
-    // The toolchain can be active for unsupported file types.
-    if ((Kind == Action::OFK_Cuda && !types::isCuda(InputType)) ||
-        (Kind == Action::OFK_HIP && !types::isHIP(InputType)))
+    // Allow the toolchain to be active for unsupported file types if we are "offload-cross-compiling" via llvm-offload.
+    if (!UseLLVMOffload && ((Kind == Action::OFK_Cuda && !types::isCuda(InputType)) ||
+        (Kind == Action::OFK_HIP && !types::isHIP(InputType))))
       continue;
 
     // Get the product of all bound architectures and toolchains.
