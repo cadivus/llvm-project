@@ -1091,15 +1091,14 @@ void SemaCUDA::inheritTargetAttrs(FunctionDecl *FD,
 }
 
 std::string SemaCUDA::getConfigureFuncName() const {
-  if (getLangOpts().OffloadViaLLVM)
-    return "__llvmPushCallConfiguration";
+  bool UseNewAPIForLLVMOffload = getLangOpts().OffloadViaLLVM;
 
   if (getLangOpts().HIP)
-    return getLangOpts().HIPUseNewLaunchAPI ? "__hipPushCallConfiguration"
+    return getLangOpts().HIPUseNewLaunchAPI || UseNewAPIForLLVMOffload ? "__hipPushCallConfiguration"
                                             : "hipConfigureCall";
 
   // New CUDA kernel launch sequence.
-  if (CudaFeatureEnabled(getASTContext().getTargetInfo().getSDKVersion(),
+  if (UseNewAPIForLLVMOffload || CudaFeatureEnabled(getASTContext().getTargetInfo().getSDKVersion(),
                          CudaFeature::CUDA_USES_NEW_LAUNCH))
     return "__cudaPushCallConfiguration";
 

@@ -1150,8 +1150,10 @@ void Driver::CreateOffloadingDeviceToolChains(Compilation &C,
         continue;
       }
 
-      auto &TC = getOffloadToolChain(C.getInputArgs(), Kind, TT,
-                                     C.getDefaultToolChain().getTriple());
+      auto A = UseLLVMOffload ? (TT.isNVPTX() ? Action::OFK_Cuda : Action::OFK_HIP) : Kind;
+      auto &TC =
+          getOffloadToolChain(C.getInputArgs(), A, TT,
+                              C.getDefaultToolChain().getTriple());
 
       // Emit a warning if the detected CUDA version is too new.
       if (Kind == Action::OFK_Cuda) {
@@ -1161,7 +1163,7 @@ void Driver::CreateOffloadingDeviceToolChains(Compilation &C,
           CudaInstallation.WarnIfUnsupportedVersion();
       }
 
-      C.addOffloadDeviceToolChain(&TC, Kind);
+      C.addOffloadDeviceToolChain(&TC, A);
     }
   }
 }
@@ -4877,6 +4879,9 @@ Action *Driver::BuildOffloadingActions(Compilation &C,
         getFinalPhase(Args) == phases::Preprocess))
     return HostAction;
 
+  bool UseLLVMOffload = Args.hasArg(
+      options::OPT_foffload_via_llvm, options::OPT_fno_offload_via_llvm, false);
+
   ActionList OffloadActions;
   OffloadAction::DeviceDependences DDeps;
 
@@ -4897,9 +4902,9 @@ Action *Driver::BuildOffloadingActions(Compilation &C,
     types::ID InputType = Input.first;
     const Arg *InputArg = Input.second;
 
-    // The toolchain can be active for unsupported file types.
-    if ((Kind == Action::OFK_Cuda && !types::isCuda(InputType)) ||
-        (Kind == Action::OFK_HIP && !types::isHIP(InputType)))
+    // Allow the toolchain to be active for unsupported file types if we are "offload-cross-compiling" via llvm-offload.
+    if (!UseLLVMOffload && ((Kind == Action::OFK_Cuda && !types::isCuda(InputType)) ||
+        (Kind == Action::OFK_HIP && !types::isHIP(InputType))))
       continue;
 
     // Get the product of all bound architectures and toolchains.
