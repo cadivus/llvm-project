@@ -12,10 +12,7 @@
 
 #include <stdio.h>
 
-extern "C" {
-void *llvm_omp_target_alloc_shared(size_t Size, int DeviceNum);
-void llvm_omp_target_free_shared(void *DevicePtr, int DeviceNum);
-}
+#include "cuda_runtime_api.h"
 
 __global__ void square(int *A) {
   __scoped_atomic_fetch_add(A, 1, __ATOMIC_SEQ_CST, __MEMORY_SCOPE_DEVICE);
@@ -23,12 +20,12 @@ __global__ void square(int *A) {
 
 int main(int argc, char **argv) {
   int DevNo = 0;
-  int *Ptr = reinterpret_cast<int *>(llvm_omp_target_alloc_shared(4, DevNo));
-  *Ptr = 0;
-  printf("Ptr %p, *Ptr: %i\n", Ptr, *Ptr);
-  // CHECK: Ptr [[Ptr:0x.*]], *Ptr: 0
+  int *Ptr;
+  cudaMalloc(&Ptr, 4);
+  printf("Ptr %p\n", Ptr);
+  // CHECK: Ptr [[Ptr:0x.*]]
   square<<<7, 6>>>(Ptr);
-  printf("Ptr %p, *Ptr: %i\n", Ptr, *Ptr);
-  // CHECK: Ptr [[Ptr]], *Ptr: 42
-  llvm_omp_target_free_shared(Ptr, DevNo);
+  cudaMemcpy(&I, Ptr, sizeof(int), cudaMemcpyDeviceToHost);
+  printf("I: %i\n", I);
+  // CHECK: I: 42
 }
