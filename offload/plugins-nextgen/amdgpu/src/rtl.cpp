@@ -3500,8 +3500,28 @@ Error AMDGPUKernelTy::launchImpl(GenericDeviceTy &GenericDevice,
   // Copy the explicit arguments.
   // TODO: We should expose the args memory manager alloc to the common part as
   // 	   alternative to copying them twice.
-  if (LaunchParams.Size)
-    std::memcpy(AllArgs, LaunchParams.Data, LaunchParams.Size);
+  if (LaunchParams.Size != KernelLaunchParamsTy::UnknownSize) {
+    LaunchParamsSizePadded  = utils::roundUp(LaunchParams.Size, sizeof(void*));
+    __builtin_memcpy(AllArgs, LaunchParams.Data, LaunchParams.Size);
+  } else {
+    if (!KernelInfo)
+      return Plugin::error(ErrorCode::INVALID_ARGUMENT, "Unkown kernel argument layout!");
+    auto &ArgumentLayout = (*KernelInfo).ArgumentLayout;
+    void **ValuePtrs = (void**)LaunchParams.Data;
+    for (int32_t I = 0; I < ArgumentLayout.NumUserArguments; ++I) {
+      auto &Arg =ArgumentLayout.Arguments[I];
+      void *ArgPtr = utils::advancePtr(AllArgs, Arg.Offset);
+      __builtin_memcpy(ArgPtr, ValuePtrs[I], Arg.Size);
+    }
+    if (ArgumentLayout.NumUserArguments) {
+      auto &Arg = ArgumentLayout.Arguments[ArgumentLayout.NumUserArguments - 1];
+      LaunchParamsSizePadded  = utils::roundUp(size_t(Arg.Offset + Arg.Size), sizeof(void*));
+    }
+  }
+
+  if (ArgsSize != LaunchParamsSizePadded &&
+      ArgsSize != LaunchParamsSizePadded + getImplicitArgsSize())
+    return Plugin::error(ErrorCode::INVALID_ARGUMENT, "Mismatch of kernel arguments size");
 
   AMDGPUDeviceTy &AMDGPUDevice = static_cast<AMDGPUDeviceTy &>(GenericDevice);
 
