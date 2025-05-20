@@ -388,9 +388,9 @@ Address CGNVCUDARuntime::prepareKernelArgs(CodeGenFunction &CGF,
 void CGNVCUDARuntime::emitDeviceStubBodyNew(CodeGenFunction &CGF,
                                             FunctionArgList &Args) {
   // Build the shadow stack entry at the very start of the function.
-  Address KernelArgs = CGF.getLangOpts().OffloadViaLLVM
-                           ? prepareKernelArgsLLVMOffload(CGF, Args)
-                           : prepareKernelArgs(CGF, Args);
+  Address KernelArgs = //CGF.getLangOpts().OffloadViaLLVM
+                       //    ? prepareKernelArgsLLVMOffload(CGF, Args) :
+                            prepareKernelArgs(CGF, Args);
 
   llvm::BasicBlock *EndBlock = CGF.createBasicBlock("setup.end");
 
@@ -877,7 +877,7 @@ llvm::Function *CGNVCUDARuntime::makeModuleCtorFunction() {
   // Data.
   Values.add(FatBinStr);
   // Unused in fatbin v1.
-  if (CGM.getLangOpts().OffloadViaLLVM)
+  if (CGM.getLangOpts().OffloadViaLLVM && CudaGpuBinary)
     Values.add(llvm::ConstantExpr::getGetElementPtr(CGM.Int8Ty, FatBinStr, llvm::ConstantInt::get(CGM.Int32Ty, CudaGpuBinary->getBuffer().size())));
   else
    Values.add(llvm::ConstantPointerNull::get(PtrTy));
@@ -1283,9 +1283,8 @@ llvm::Function *CGNVCUDARuntime::finalizeModule() {
     }
     return nullptr;
   }
-  if (CGM.getLangOpts().OffloadViaLLVM ||
-      (CGM.getLangOpts().OffloadingNewDriver &&
-       (CGM.getLangOpts().HIP || RelocatableDeviceCode)))
+  if (CGM.getLangOpts().OffloadingNewDriver &&
+      (CGM.getLangOpts().HIP || RelocatableDeviceCode))
     createOffloadingEntries();
   else
     return makeModuleCtorFunction();

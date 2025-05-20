@@ -2844,8 +2844,7 @@ void tools::addOpenMPDeviceRTL(const Driver &D,
 void tools::addOffloadViaLLVMRuntimeLibArgs(const ToolChain &TC, Compilation &C,
                                  const llvm::opt::ArgList &Args,
                                  llvm::opt::ArgStringList &CmdArgs) {
- if (!Args.hasArg(
-     options::OPT_foffload_via_llvm))
+ if (!C.getActiveOffloadKinds() || !Args.hasArg(options::OPT_foffload_via_llvm))
      return;
  // Without looking at the input type we can't know if we need a HIP or CUDA runtime, so we link both. They are compatible.
  CmdArgs.push_back("-lLLVMhip64");

@@ -4552,8 +4552,7 @@ void Driver::BuildActions(Compilation &C, DerivedArgList &Args,
     if (ShouldEmitStaticLibrary(Args)) {
       LA = C.MakeAction<StaticLibJobAction>(LinkerInputs, types::TY_Image);
     } else if ((UseNewOffloadingDriver && !HIPNoRDC) ||
-               Args.hasArg(options::OPT_offload_link) || Args.hasArg(
-      options::OPT_foffload_via_llvm, options::OPT_fno_offload_via_llvm, false)) {
+               Args.hasArg(options::OPT_offload_link)) {
       LA = C.MakeAction<LinkerWrapperJobAction>(LinkerInputs, types::TY_Image);
       LA->propagateHostOffloadInfo(C.getActiveOffloadKinds(),
                                    /*BoundArch=*/nullptr);

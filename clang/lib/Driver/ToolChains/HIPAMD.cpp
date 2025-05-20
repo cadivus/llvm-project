@@ -193,16 +193,13 @@ void AMDGCN::Linker::ConstructJob(Compilation &C, const JobAction &JA,
                                   const InputInfoList &Inputs,
                                   const ArgList &Args,
                                   const char *LinkingOutput) const {
-  bool UseLLVMOffload = Args.hasFlag(options::OPT_foffload_via_llvm,
-                                     options::OPT_fno_offload_via_llvm, false);
-
   if (Inputs.size() > 0 &&
       Inputs[0].getType() == types::TY_Image &&
-      JA.getType() == types::TY_Object && !UseLLVMOffload)
+      JA.getType() == types::TY_Object)
     return HIP::constructGenerateObjFileFromHIPFatBinary(C, Output, Inputs,
                                                          Args, JA, *this);
 
-  if (JA.getType() == types::TY_HIP_FATBIN && !UseLLVMOffload)
+  if (JA.getType() == types::TY_HIP_FATBIN)
     return HIP::constructHIPFatbinCommand(C, JA, Output.getFilename(), Inputs,
                                           Args, *this);
 
