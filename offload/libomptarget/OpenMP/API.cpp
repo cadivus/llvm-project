@@ -702,3 +702,36 @@ EXTERN void __tgt_target_sync(ident_t *loc_ref, int gtid, void *current_task,
 
   RTLOngoingSyncs--;
 }
+
+EXTERN void ompx_sync_default_stream(unsigned DeviceNum) {
+  if (DeviceNum >= 8)
+    return;
+
+  AsyncInfoTy *&DefaultAsyncInfo = DefaultQueues[DeviceNum];
+  if (!DefaultAsyncInfo || DefaultAsyncInfo->isDone())
+    return;
+
+  auto DeviceOrErr = PM->getDevice(DeviceNum);
+  if (!DeviceOrErr)
+    FATAL_MESSAGE(DeviceNum, "%s", toString(DeviceOrErr.takeError()).c_str());
+
+  DeviceOrErr->synchronize(*DefaultAsyncInfo);
+  DefaultAsyncInfo->synchronize();
+}
+
+EXTERN void ompx_create_default_stream(unsigned DeviceNum) {
+  if (DeviceNum >= 8)
+    return;
+
+  AsyncInfoTy *&DefaultAsyncInfo = DefaultQueues[DeviceNum];
+  if (DefaultAsyncInfo)
+    return;
+
+  auto DeviceOrErr = PM->getDevice(DeviceNum);
+  if (!DeviceOrErr)
+    FATAL_MESSAGE(DeviceNum, "%s", toString(DeviceOrErr.takeError()).c_str());
+
+  DefaultAsyncInfo =
+      new AsyncInfoTy(*DeviceOrErr, AsyncInfoTy::SyncTy::NON_BLOCKING,
+                      /*PersistentQueue=*/true);
+}
