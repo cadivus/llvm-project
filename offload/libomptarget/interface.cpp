@@ -30,11 +30,16 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <type_traits>
 #include <memory>
 
 #ifdef OMPT_SUPPORT
 using namespace llvm::omp::target::ompt;
 #endif
+
+extern "C" {
+thread_local AsyncInfoTy* DefaultQueues[8];
+}
 
 // If offload is enabled, ensure that device DeviceID has been initialized.
 //
@@ -148,7 +153,14 @@ targetData(ident_t *Loc, int64_t DeviceId, int32_t ArgNum, void **ArgsBase,
     FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
 
   TargetAsyncInfoTy TargetAsyncInfo(*DeviceOrErr);
-  AsyncInfoTy &AsyncInfo = TargetAsyncInfo;
+  AsyncInfoTy *AsyncInfo = &static_cast<AsyncInfoTy &>(TargetAsyncInfo);
+  if constexpr (std::is_same_v<AsyncInfoTy, TargetAsyncInfoTy>) {
+    if (DeviceId < 8) {
+      AsyncInfoTy *&DefaultAsyncInfo = DefaultQueues[DeviceId];
+      if (DefaultAsyncInfo)
+      AsyncInfo = DefaultAsyncInfo;
+    }
+  }
 
   /// RAII to establish tool anchors before and after data begin / end / update
   OMPT_IF_BUILT(assert((TargetDataFunction == targetDataBegin ||
@@ -173,16 +185,16 @@ targetData(ident_t *Loc, int64_t DeviceId, int32_t ArgNum, void **ArgsBase,
     AttachInfo = std::make_unique<AttachInfoTy>();
 
   Rc = TargetDataFunction(Loc, *DeviceOrErr, ArgNum, ArgsBase, Args, ArgSizes,
-                          ArgTypes, ArgNames, ArgMappers, AsyncInfo,
+                          ArgTypes, ArgNames, ArgMappers, *AsyncInfo,
                           AttachInfo.get(), /*FromMapper=*/false);
 
   if (Rc == OFFLOAD_SUCCESS) {
-    // Process deferred ATTACH entries BEFORE synchronization
-    if (AttachInfo && !AttachInfo->AttachEntries.empty())
-      Rc = processAttachEntries(*DeviceOrErr, *AttachInfo, AsyncInfo);
+  // Process deferred ATTACH entries BEFORE synchronization
+  if (AttachInfo && !AttachInfo->AttachEntries.empty())
+    Rc = processAttachEntries(*DeviceOrErr, *AttachInfo, *AsyncInfo);
 
-    if (Rc == OFFLOAD_SUCCESS)
-      Rc = AsyncInfo.synchronize();
+  if (Rc == OFFLOAD_SUCCESS)
+    Rc = AsyncInfo->synchronize();
   }
 
   handleTargetOutcome(Rc == OFFLOAD_SUCCESS, Loc);
@@ -371,18 +383,25 @@ static inline int targetKernel(ident_t *Loc, int64_t DeviceId, int32_t NumTeams,
     FATAL_MESSAGE(DeviceId, "%s", toString(DeviceOrErr.takeError()).c_str());
 
   TargetAsyncInfoTy TargetAsyncInfo(*DeviceOrErr);
-  AsyncInfoTy &AsyncInfo = TargetAsyncInfo;
+  AsyncInfoTy *AsyncInfo = &static_cast<AsyncInfoTy &>(TargetAsyncInfo);
+  if constexpr (std::is_same_v<AsyncInfoTy, TargetAsyncInfoTy>) {
+    if (DeviceId < 8) {
+      AsyncInfoTy *&DefaultAsyncInfo = DefaultQueues[DeviceId];
+      if (DefaultAsyncInfo)
+      AsyncInfo = DefaultAsyncInfo;
+    }
+  }
   /// RAII to establish tool anchors before and after target region
   OMPT_IF_BUILT(InterfaceRAII TargetRAII(
                     RegionInterface.getCallbacks<ompt_target>(), DeviceId,
                     /*CodePtr=*/OMPT_GET_RETURN_ADDRESS);)
 
   int Rc = OFFLOAD_SUCCESS;
-  Rc = target(Loc, *DeviceOrErr, HostPtr, *KernelArgs, AsyncInfo);
+  Rc = target(Loc, *DeviceOrErr, HostPtr, *KernelArgs, *AsyncInfo);
   { // required to show synchronization
     TIMESCOPE_WITH_DETAILS_AND_IDENT("Runtime: synchronize", "", Loc);
     if (Rc == OFFLOAD_SUCCESS)
-      Rc = AsyncInfo.synchronize();
+      Rc = AsyncInfo->synchronize();
 
     handleTargetOutcome(Rc == OFFLOAD_SUCCESS, Loc);
     assert(Rc == OFFLOAD_SUCCESS && "__tgt_target_kernel unexpected failure!");
