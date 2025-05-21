@@ -387,9 +387,10 @@ Address CGNVCUDARuntime::prepareKernelArgs(CodeGenFunction &CGF,
 // array and kernels are launched using cudaLaunchKernel().
 void CGNVCUDARuntime::emitDeviceStubBodyNew(CodeGenFunction &CGF,
                                             FunctionArgList &Args) {
+  bool UseLLVMOffload = CGF.getLangOpts().OffloadViaLLVM;
   // Build the shadow stack entry at the very start of the function.
-  Address KernelArgs = //CGF.getLangOpts().OffloadViaLLVM
-                       //    ? prepareKernelArgsLLVMOffload(CGF, Args) :
+  Address KernelArgs = UseLLVMOffload
+                          ? prepareKernelArgsLLVMOffload(CGF, Args) :
                             prepareKernelArgs(CGF, Args);
 
   llvm::BasicBlock *EndBlock = CGF.createBasicBlock("setup.end");
@@ -414,7 +415,8 @@ void CGNVCUDARuntime::emitDeviceStubBodyNew(CodeGenFunction &CGF,
     else if (CGF.getLangOpts().CUDA)
       KernelLaunchAPI = KernelLaunchAPI + "_ptsz";
   }
-  auto LaunchKernelName = addPrefixToName(KernelLaunchAPI);
+  /// Use __llvmLaunchKernel for LLVMOffload.
+  auto LaunchKernelName = UseLLVMOffload ? "__llvm" + KernelLaunchAPI : addPrefixToName(KernelLaunchAPI);
   const IdentifierInfo &cudaLaunchKernelII =
       CGM.getContext().Idents.get(LaunchKernelName);
   FunctionDecl *cudaLaunchKernelFD = nullptr;

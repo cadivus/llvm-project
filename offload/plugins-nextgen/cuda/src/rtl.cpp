@@ -1277,7 +1277,7 @@ Error CUDAKernelTy::launchImpl(GenericDeviceTy &GenericDevice,
     GenericDevice.Plugin.getRPCServer().Thread->notify();
 
   CUresult Res;
-  if (LaunchParams.Size != -1)
+  if (LaunchParams.Size != KernelLaunchParamsTy::UnknownSize)
     Res = cuLaunchKernel(Func, NumBlocks[0], NumBlocks[1], NumBlocks[2],
 				  NumThreads[0], NumThreads[1], NumThreads[2],
                                 MaxDynCGroupMem, Stream, nullptr, Config);

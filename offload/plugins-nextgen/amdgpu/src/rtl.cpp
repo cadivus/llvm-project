@@ -1633,7 +1633,6 @@ struct AMDGPUStreamManagerTy final
         NextQueue(0), Agent(HSAAgent) {}
 
   Error init(uint32_t InitialSize, int NumHSAQueues, int HSAQueueSize) {
-    llvm::errs() << InitialSize << " :"  << NumHSAQueues << " : " << HSAQueueSize << "\n";
     Queues = std::vector<AMDGPUQueueTy>(NumHSAQueues);
     QueueSize = HSAQueueSize;
     MaxNumQueues = NumHSAQueues;
