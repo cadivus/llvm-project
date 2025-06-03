@@ -1,0 +1,112 @@
+//===------ LanguageLaunch.cpp - Language (CUDA/HIP) launch api -----------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+//
+//===----------------------------------------------------------------------===//
+
+#include "ExportedAPI.h"
+#include "Types.h"
+
+#include "OffloadAPI.h"
+
+#include <cstdint>
+#include <cstdio>
+
+namespace {
+struct LLVMOffloadKernelArgsTy {
+  size_t Size;
+  void *Args;
+  void *_;
+};
+
+struct CallConfigurationTy {
+  dim3 GridSize;
+  dim3 BlockSize;
+  size_t SharedMemory;
+  void *Stream;
+};
+
+static thread_local CallConfigurationTy CC = {};
+} // namespace
+
+/// Hidden, but exported, Launch API
+///{
+extern "C" {
+
+unsigned llvmPushCallConfiguration(dim3 __grid_size, dim3 __block_size,
+                                   size_t __shared_memory, void *__stream) {
+  CallConfigurationTy &Kernel = CC;
+  Kernel.GridSize = __grid_size;
+  Kernel.BlockSize = __block_size;
+  Kernel.SharedMemory = __shared_memory;
+  Kernel.Stream = __stream;
+  return 0;
+}
+
+unsigned llvmPopCallConfiguration(dim3 *__grid_size, dim3 *__block_size,
+                                  size_t *__shared_memory, void *__stream) {
+  CallConfigurationTy &Kernel = CC;
+  *__grid_size = Kernel.GridSize;
+  *__block_size = Kernel.BlockSize;
+  *__shared_memory = Kernel.SharedMemory;
+  *((void **)__stream) = Kernel.Stream;
+  return 0;
+}
+
+ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
+                                 dim3 BlockDim, void *KernelArgsPtr,
+                                 size_t DynamicSharedMem, void *Stream,
+                                 LLVMOffloadKernelArgsTy *LOKA) {
+  auto Device = olKGetDefaultDevice();
+  ol_symbol_handle_t Kernel = olKGetKernel(KernelID);
+
+  ol_kernel_launch_size_args_t LaunchSizeArgs;
+  LaunchSizeArgs.NumGroups.x = GridDim.x;
+  LaunchSizeArgs.NumGroups.y = std::max(GridDim.y, 1u);
+  LaunchSizeArgs.NumGroups.z = std::max(GridDim.z, 1u);
+  LaunchSizeArgs.GroupSize.x = BlockDim.x;
+  LaunchSizeArgs.GroupSize.y = std::max(BlockDim.y, 1u);
+  LaunchSizeArgs.GroupSize.z = std::max(BlockDim.z, 1u);
+  LaunchSizeArgs.DynSharedMemory = DynamicSharedMem;
+  LaunchSizeArgs.Dimensions =
+      1 + !!(GridDim.y * BlockDim.y > 1) + !!(GridDim.z * BlockDim.z > 1);
+  ol_queue_handle_t Queue = Stream ? reinterpret_cast<ol_queue_handle_t>(Stream)
+                                   : olKGetDefaultQueue();
+
+  ol_result_t Result;
+  /// If LOKA is set, the kernel argument layout is known and already enforced
+  /// in LOKA->Args. Otherwise, indicate the plugins have to organize the
+  /// arguments themselves, as KernelArgsPtr is only an array of pointers to
+  /// arguments.
+  /// TODO: We should include APITypes.h and use
+  /// KernelLaunchParamsTy::UnknownSize instead of -1 below.
+  if (LOKA)
+    Result = olLaunchKernel(Queue, Device, Kernel, LOKA->Args, LOKA->Size,
+                            &LaunchSizeArgs);
+  else
+    Result = olLaunchKernel(Queue, Device, Kernel, KernelArgsPtr, size_t(-1),
+                            &LaunchSizeArgs);
+
+  return Result;
+}
+
+#define LLVM_STYLE_LAUNCH(SUFFIX, PER_THREAD_STREAM)                           \
+  unsigned __llvmLaunchKernel##SUFFIX(const char *KernelID, dim3 GridDim,      \
+                                      dim3 BlockDim, void *KernelArgsPtr,      \
+                                      size_t DynamicSharedMem, void *Stream) { \
+    auto *LOKA = reinterpret_cast<LLVMOffloadKernelArgsTy *>(KernelArgsPtr);   \
+    ol_result_t Result =                                                       \
+        llvmLaunchKernelImpl(KernelID, GridDim, BlockDim, KernelArgsPtr,       \
+                             DynamicSharedMem, Stream, LOKA);                  \
+    return Result ? Result->Code : 0;                                          \
+  }
+
+LLVM_STYLE_LAUNCH(, false);
+LLVM_STYLE_LAUNCH(_spt, true);
+LLVM_STYLE_LAUNCH(_ptsz, true);
+}
+///}
