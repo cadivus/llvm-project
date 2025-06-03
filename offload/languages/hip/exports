@@ -1,0 +1,7 @@
+VERS1.0 {
+  global:
+    *hip*;
+    __llvmLaunchKernel*;
+  local:
+    *;
+};
