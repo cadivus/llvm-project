@@ -8,6 +8,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "LanguageRuntime.h"
+
 #ifndef LANGUAGE
 #error This file should be included, or used, with a LANGUAGE macro set.
 #endif
