@@ -35,3 +35,7 @@ set_target_properties(LLVMOffloadKernel PROPERTIES
                       INSTALL_RPATH "$ORIGIN"
                       BUILD_RPATH "$ORIGIN:${CMAKE_CURRENT_BINARY_DIR}/..")
 install(TARGETS LLVMOffloadKernel LIBRARY COMPONENT LLVMOffloadKernel DESTINATION "${OFFLOAD_INSTALL_LIBDIR}")
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../include/kernel/DefineLanguageNames.inc DESTINATION ${CMAKE_INSTALL_PREFIX}/include/offload/kernel/)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../include/kernel/LanguageRuntime.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/offload/kernel/)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../include/kernel/UndefineLanguageNames.inc DESTINATION ${CMAKE_INSTALL_PREFIX}/include/offload/kernel/)
