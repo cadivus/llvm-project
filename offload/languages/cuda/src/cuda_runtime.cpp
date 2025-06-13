@@ -13,11 +13,11 @@
 
 #define LANGUAGE cuda
 
-#include "LanguageRuntime.cpp"
+#include "../../kernel/src/LanguageRuntime.cpp"
 
-#include "LanguageRegistration.cpp"
+#include "../../kernel/src/LanguageRegistration.cpp"
 
-#include "LanguageLaunch.cpp"
+#include "../../kernel/src/LanguageLaunch.cpp"
 
 // Must be last as it introduces alises for some definitions from above.
 #include "LanguageAliases.h"

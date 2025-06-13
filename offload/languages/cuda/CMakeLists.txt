@@ -14,7 +14,8 @@ if(LIBOMP_HAVE_VERSION_SCRIPT_FLAG)
 endif()
 
 target_include_directories(LLVMcudart PUBLIC
-                            ${CMAKE_CURRENT_BINARY_DIR}/../include
+                            ${CMAKE_CURRENT_SOURCE_DIR}/../include/cuda
+                            ${CMAKE_CURRENT_SOURCE_DIR}/../include/kernel
                             ${CMAKE_CURRENT_SOURCE_DIR}/include
                             ${CMAKE_CURRENT_SOURCE_DIR}/../kernel/include
                             ${CMAKE_CURRENT_SOURCE_DIR}/../../liboffload/include
@@ -36,4 +37,4 @@ set_target_properties(LLVMcudart PROPERTIES
                       BUILD_RPATH "$ORIGIN:${CMAKE_CURRENT_BINARY_DIR}/..")
 install(TARGETS LLVMcudart LIBRARY COMPONENT LLVMcudart DESTINATION "${OFFLOAD_INSTALL_LIBDIR}")
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda_runtime.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/offload/cuda/)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../include/cuda/cuda_runtime.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/offload/cuda/)
