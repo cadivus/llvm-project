@@ -11,11 +11,11 @@
 
 #define LANGUAGE hip
 
-#include "../../kernel/include/DefineLanguageNames.inc"
+#include "../kernel/DefineLanguageNames.inc"
 
-#include "../../kernel/include/LanguageRuntime.h"
+#include "../kernel/LanguageRuntime.h"
 
-#include "../../kernel/include/UndefineLanguageNames.inc"
+#include "../kernel/UndefineLanguageNames.inc"
 
 #undef LANGUAGE
 

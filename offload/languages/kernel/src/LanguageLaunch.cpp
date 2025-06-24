@@ -8,20 +8,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ExportedAPI.h"
-#include "Types.h"
+#include "LanguageLaunch.h"
 
-#include "OffloadAPI.h"
-
-#include <cstdint>
 #include <cstdio>
 
-namespace {
-struct LLVMOffloadKernelArgsTy {
-  size_t Size;
-  void *Args;
-  void *_;
-};
+extern "C" {
 
 struct CallConfigurationTy {
   dim3 GridSize;
@@ -31,12 +22,8 @@ struct CallConfigurationTy {
 };
 
 static thread_local CallConfigurationTy CC = {};
-} // namespace
 
-/// Hidden, but exported, Launch API
-///{
-extern "C" {
-
+/// Push call configuration for kernel launch
 unsigned llvmPushCallConfiguration(dim3 __grid_size, dim3 __block_size,
                                    size_t __shared_memory, void *__stream) {
   CallConfigurationTy &Kernel = CC;
@@ -47,6 +34,7 @@ unsigned llvmPushCallConfiguration(dim3 __grid_size, dim3 __block_size,
   return 0;
 }
 
+/// Pop call configuration for kernel launch
 unsigned llvmPopCallConfiguration(dim3 *__grid_size, dim3 *__block_size,
                                   size_t *__shared_memory, void *__stream) {
   CallConfigurationTy &Kernel = CC;
@@ -57,6 +45,7 @@ unsigned llvmPopCallConfiguration(dim3 *__grid_size, dim3 *__block_size,
   return 0;
 }
 
+/// Internal kernel launch implementation
 ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
                                  dim3 BlockDim, void *KernelArgsPtr,
                                  size_t DynamicSharedMem, void *Stream,
@@ -74,16 +63,11 @@ ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
   LaunchSizeArgs.DynSharedMemory = DynamicSharedMem;
   LaunchSizeArgs.Dimensions =
       1 + !!(GridDim.y * BlockDim.y > 1) + !!(GridDim.z * BlockDim.z > 1);
+
   ol_queue_handle_t Queue = Stream ? reinterpret_cast<ol_queue_handle_t>(Stream)
                                    : olKGetDefaultQueue();
 
   ol_result_t Result;
-  /// If LOKA is set, the kernel argument layout is known and already enforced
-  /// in LOKA->Args. Otherwise, indicate the plugins have to organize the
-  /// arguments themselves, as KernelArgsPtr is only an array of pointers to
-  /// arguments.
-  /// TODO: We should include APITypes.h and use
-  /// KernelLaunchParamsTy::UnknownSize instead of -1 below.
   if (LOKA)
     Result = olLaunchKernel(Queue, Device, Kernel, LOKA->Args, LOKA->Size,
                             &LaunchSizeArgs, nullptr);
@@ -95,18 +79,18 @@ ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
 }
 
 #define LLVM_STYLE_LAUNCH(SUFFIX, PER_THREAD_STREAM)                           \
-  unsigned __llvmLaunchKernel##SUFFIX(const char *KernelID, dim3 GridDim,      \
-                                      dim3 BlockDim, void *KernelArgsPtr,      \
-                                      size_t DynamicSharedMem, void *Stream) { \
-    auto *LOKA = reinterpret_cast<LLVMOffloadKernelArgsTy *>(KernelArgsPtr);   \
-    ol_result_t Result =                                                       \
-        llvmLaunchKernelImpl(KernelID, GridDim, BlockDim, KernelArgsPtr,       \
-                             DynamicSharedMem, Stream, LOKA);                  \
-    return Result ? Result->Code : 0;                                          \
-  }
+unsigned __llvmLaunchKernel##SUFFIX(const char *KernelID, dim3 GridDim,     \
+                                    dim3 BlockDim, void *KernelArgsPtr,     \
+                                    size_t DynamicSharedMem, void *Stream) {\
+  auto *LOKA = reinterpret_cast<LLVMOffloadKernelArgsTy *>(KernelArgsPtr);  \
+  ol_result_t Result =                                                      \
+      llvmLaunchKernelImpl(KernelID, GridDim, BlockDim, KernelArgsPtr,      \
+                           DynamicSharedMem, Stream, LOKA);                 \
+  return Result ? Result->Code : 0;                                         \
+}
 
 LLVM_STYLE_LAUNCH(, false);
 LLVM_STYLE_LAUNCH(_spt, true);
 LLVM_STYLE_LAUNCH(_ptsz, true);
-}
-///}
+
+} // extern "C"
