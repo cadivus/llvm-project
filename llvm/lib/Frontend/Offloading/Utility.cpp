@@ -15,10 +15,8 @@
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Object/ELFObjectFile.h"
-#include "llvm/Object/OffloadBinary.h"
 #include "llvm/ObjectYAML/ELFYAML.h"
 #include "llvm/ObjectYAML/yaml2obj.h"
-#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MemoryBufferRef.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 
@@ -239,10 +237,9 @@ private:
   /// Extracts the relevant information via simple string look-up in the msgpack
   /// document elements.
   Error
-  extractKernelData(msgpack::MapDocNode::MapTy::iterator &It,
+  extractKernelData(msgpack::MapDocNode::MapTy::value_type V,
                     std::string &KernelName,
                     offloading::amdgpu::AMDGPUKernelMetaData &KernelData) {
-    msgpack::MapDocNode::MapTy::value_type V = *It;
     if (!V.first.isString())
       return Error::success();
 
@@ -263,30 +260,8 @@ private:
       }
     };
 
-    auto GetArgumentLayout = [&](msgpack::DocNode &DN, amdgpu::AMDGPUKernelArgumentLayout &ArgumentLayout) {
-      assert(DN.isArray() && "MsgPack DocNode is an array node");
-      for (auto &Node : DN.getArray()) {
-	uint32_t Offset = -1, Size = -1;
-	for (auto It : Node.getMap()) {
-	  if (IsKey(It.first, ".address_space"))
-	    /* Ignored */;
-	  else if (IsKey(It.first, ".offset"))
-	    Offset = It.second.getUInt();
-	  else if (IsKey(It.first, ".size"))
-	    Size = It.second.getUInt();
-	  else if (IsKey(It.first, ".value_kind"))
-	    if (ArgumentLayout.NumUserArguments == -1 && It.second.getString().starts_with("hidden_"))
-	  ArgumentLayout.NumUserArguments = ArgumentLayout.Arguments.size();
-	}
-	assert(Offset != -1u && Size != -1u && "Expected both offset and size!");
-        ArgumentLayout.Arguments.push_back({Offset, Size});
-      }
-    };
-
     if (IsKey(V.first, ".name")) {
       KernelName = V.second.toString();
-    } else if (IsKey(V.first, ".args")) {
-      GetArgumentLayout(V.second, KernelData.ArgumentLayout);
     } else if (IsKey(V.first, ".sgpr_count")) {
       KernelData.SGPRCount = V.second.getUInt();
     } else if (IsKey(V.first, ".sgpr_spill_count")) {
@@ -337,7 +312,7 @@ private:
     std::string KernelName;
     auto Entry = (*It).getMap();
     for (auto MI = Entry.begin(), E = Entry.end(); MI != E; ++MI)
-      if (auto Err = extractKernelData(MI, KernelName, KernelData))
+      if (auto Err = extractKernelData(*MI, KernelName, KernelData))
         return Err;
 
     KernelInfoMap.insert({KernelName, KernelData});

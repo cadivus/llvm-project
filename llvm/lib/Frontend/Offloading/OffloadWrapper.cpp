@@ -464,12 +464,10 @@ Function *createRegisterGlobalsFunction(Module &M, bool IsHIP,
                               llvm::offloading::OffloadGlobalNormalized));
   auto *Normalized = Builder.CreateLShr(
       NormalizedBit, ConstantInt::get(Type::getInt32Ty(C), 5), "normalized");
-  auto *KindAnd = Builder.CreateAnd(
+  auto *KindCond = Builder.CreateICmpEQ(
       Kind, ConstantInt::get(Type::getInt16Ty(C),
                              IsHIP ? object::OffloadKind::OFK_HIP
                                    : object::OffloadKind::OFK_Cuda));
-  auto *KindCond = Builder.CreateICmpNE(
-      KindAnd, ConstantInt::get(Type::getInt16Ty(C), 0));
   Builder.CreateCondBr(KindCond, IfKindBB, IfEndBB);
   Builder.SetInsertPoint(IfKindBB);
   auto *FnCond = Builder.CreateICmpEQ(
