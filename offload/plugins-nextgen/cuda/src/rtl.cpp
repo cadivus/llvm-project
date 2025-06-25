@@ -1276,15 +1276,9 @@ Error CUDAKernelTy::launchImpl(GenericDeviceTy &GenericDevice,
   if (GenericDevice.getRPCServer())
     GenericDevice.Plugin.getRPCServer().Thread->notify();
 
-  CUresult Res;
-  if (LaunchParams.Size != KernelLaunchParamsTy::UnknownSize)
-    Res = cuLaunchKernel(Func, NumBlocks[0], NumBlocks[1], NumBlocks[2],
-				  NumThreads[0], NumThreads[1], NumThreads[2],
+  CUresult Res = cuLaunchKernel(Func, NumBlocks[0], NumBlocks[1], NumBlocks[2],
+                                NumThreads[0], NumThreads[1], NumThreads[2],
                                 MaxDynCGroupMem, Stream, nullptr, Config);
-  else
-    Res = cuLaunchKernel(Func, NumBlocks[0], NumBlocks[1], NumBlocks[2],
-				  NumThreads[0], NumThreads[1], NumThreads[2],
-                                MaxDynCGroupMem, Stream, (void**)LaunchParams.Data, nullptr);
 
   // Register a callback to indicate when the kernel is complete.
   if (GenericDevice.getRPCServer())
