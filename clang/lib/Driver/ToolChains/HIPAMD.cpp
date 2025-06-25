@@ -227,9 +227,7 @@ void HIPAMDToolChain::addClangTargetOptions(
     Action::OffloadKind DeviceOffloadingKind) const {
   HostTC.addClangTargetOptions(DriverArgs, CC1Args, DeviceOffloadingKind);
 
-  bool UseLLVMOffload = DriverArgs.hasFlag(options::OPT_foffload_via_llvm,
-                                           options::OPT_fno_offload_via_llvm, false);
-  assert((UseLLVMOffload || (DeviceOffloadingKind == Action::OFK_HIP)) &&
+  assert(DeviceOffloadingKind == Action::OFK_HIP &&
          "Only HIP offloading kinds are supported for GPUs.");
 
   CC1Args.append({"-fcuda-is-device", "-fno-threadsafe-statics"});

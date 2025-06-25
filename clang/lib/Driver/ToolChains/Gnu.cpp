@@ -544,7 +544,6 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   AddLinkerInputs(ToolChain, Inputs, Args, CmdArgs, JA);
 
   addHIPRuntimeLibArgs(ToolChain, C, Args, CmdArgs);
-  addOffloadViaLLVMRuntimeLibArgs(ToolChain, C, Args, CmdArgs);
 
   // The profile runtime also needs access to system libraries.
   getToolChain().addProfileRTLibs(Args, CmdArgs);

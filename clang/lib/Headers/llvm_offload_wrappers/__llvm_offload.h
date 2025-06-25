@@ -9,8 +9,6 @@
 
 #include <stddef.h>
 
-#include "__llvm_offload_builtin_vars.h"
-
 #define __host__ __attribute__((host))
 #define __device__ __attribute__((device))
 #define __global__ __attribute__((global))
@@ -26,8 +24,8 @@ typedef struct dim3 {
   unsigned x = 0, y = 0, z = 0;
 } dim3;
 
-unsigned __hipPushCallConfiguration(dim3 gridDim, dim3 blockDim,
-                                    size_t sharedMem = 0, void *stream = 0);
-unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
+// TODO: For some reason the CUDA device compilation requires this declaration
+// to be present on the device while it is only used on the host.
+unsigned __llvmPushCallConfiguration(dim3 gridDim, dim3 blockDim,
                                      size_t sharedMem = 0, void *stream = 0);
 }

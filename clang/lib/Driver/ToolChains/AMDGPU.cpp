@@ -459,10 +459,6 @@ void RocmInstallationDetector::print(raw_ostream &OS) const {
 
 void RocmInstallationDetector::AddHIPIncludeArgs(const ArgList &DriverArgs,
                                                  ArgStringList &CC1Args) const {
-  if (DriverArgs.hasFlag(options::OPT_foffload_via_llvm,
-                         options::OPT_fno_offload_via_llvm, false))
-    return;
-
   bool UsesRuntimeWrapper = VersionMajorMinor > llvm::VersionTuple(3, 5) &&
                             !DriverArgs.hasArg(options::OPT_nohipwrapperinc);
   bool HasHipStdPar = DriverArgs.hasArg(options::OPT_hipstdpar);

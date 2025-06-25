@@ -1272,8 +1272,13 @@ bool tools::addOpenMPRuntime(const Compilation &C, ArgStringList &CmdArgs,
                              bool ForceStaticHostRuntime, bool IsOffloadingHost,
                              bool GompNeedsRT) {
   if (!Args.hasFlag(options::OPT_fopenmp, options::OPT_fopenmp_EQ,
-                    options::OPT_fno_openmp, false))
+                    options::OPT_fno_openmp, false)) {
+    // We need libomptarget (liboffload) if it's the choosen offloading runtime.
+    if (Args.hasFlag(options::OPT_foffload_via_llvm,
+                     options::OPT_fno_offload_via_llvm, false))
+      CmdArgs.push_back("-lomptarget");
     return false;
+  }
 
   Driver::OpenMPRuntimeKind RTKind = TC.getDriver().getOpenMPRuntime(Args);
 
@@ -2840,22 +2845,11 @@ void tools::addOpenMPDeviceRTL(const Driver &D,
           << LibOmpTargetName << ArchPrefix;
   }
 }
-
-void tools::addOffloadViaLLVMRuntimeLibArgs(const ToolChain &TC, Compilation &C,
-                                 const llvm::opt::ArgList &Args,
-                                 llvm::opt::ArgStringList &CmdArgs) {
- if (!Args.hasArg(options::OPT_foffload_via_llvm))
-     return;
- // Without looking at the input type we can't know if we need a HIP or CUDA runtime, so we link both. They are compatible.
- CmdArgs.push_back("-lLLVMhip64");
- CmdArgs.push_back("-lLLVMcudart");
-}
-
 void tools::addHIPRuntimeLibArgs(const ToolChain &TC, Compilation &C,
                                  const llvm::opt::ArgList &Args,
                                  llvm::opt::ArgStringList &CmdArgs) {
   if ((C.getActiveOffloadKinds() & Action::OFK_HIP) &&
-      !Args.hasArg(options::OPT_nostdlib) && !Args.hasArg(options::OPT_foffload_via_llvm) &&
+      !Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_no_hip_rt) && !Args.hasArg(options::OPT_r)) {
     TC.AddHIPRuntimeLibArgs(Args, CmdArgs);
   } else {
