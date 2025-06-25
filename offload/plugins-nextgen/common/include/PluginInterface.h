@@ -838,7 +838,7 @@ struct GenericDeviceTy : public DeviceAllocatorTy {
                      KernelArgsTy &KernelArgs, __tgt_async_info *AsyncInfo);
 
   /// Initialize a __tgt_async_info structure. Related to interop features.
-  Error initAsyncInfo(__tgt_async_info **AsyncInfoPtr, bool Persistent = false);
+  Error initAsyncInfo(__tgt_async_info **AsyncInfoPtr);
   virtual Error initAsyncInfoImpl(AsyncInfoWrapperTy &AsyncInfoWrapper) = 0;
 
   /// Initialize a __tgt_device_info structure. Related to interop features.
