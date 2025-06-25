@@ -36,8 +36,7 @@ enum OffloadKind : uint16_t {
   OFK_Cuda = (1 << 1),
   OFK_HIP = (1 << 2),
   OFK_SYCL = (1 << 3),
-  OFK_LLVM = OFK_OpenMP | OFK_Cuda | OFK_HIP,
-  OFK_LAST = (1 << 5),
+  OFK_LAST = (1 << 4),
 };
 
 /// The type of contents the offloading image contains.

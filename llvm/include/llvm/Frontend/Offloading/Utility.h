@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/Module.h"
@@ -113,19 +112,6 @@ namespace amdgpu {
 bool isImageCompatibleWithEnv(StringRef ImageArch, uint32_t ImageFlags,
                               StringRef EnvTargetID);
 
-/// The offset and size of an AMD GPU kernel argument, as read from MetaData.
-struct AMDGPUKernelArgumentInfo {
-  // Address space and value kind are available but not stored right now.
-  uint32_t Offset;
-  uint32_t Size;
-};
-
-/// Container for the kernel argument layout, as read from MetaData.
-struct AMDGPUKernelArgumentLayout {
-  SmallVector<AMDGPUKernelArgumentInfo, 32> Arguments;
-  int32_t NumUserArguments = -1; 
-};
-
 /// Struct for holding metadata related to AMDGPU kernels, for more information
 /// about the metadata and its meaning see:
 /// https://llvm.org/docs/AMDGPUUsage.html#code-object-v3
@@ -159,8 +145,6 @@ struct AMDGPUKernelMetaData {
   uint32_t WavefrontSize = KInvalidValue;
   /// Maximum flat work-group size supported by the kernel in work-items.
   uint32_t MaxFlatWorkgroupSize = KInvalidValue;
-  /// The argument layout of this kernel.
-  AMDGPUKernelArgumentLayout ArgumentLayout;
 };
 
 /// Reads AMDGPU specific metadata from the ELF file and propagates the
