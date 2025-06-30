@@ -17,8 +17,6 @@ extern "C" {
   ol_device_handle_t olKGetHostDevice();
 
   ol_queue_handle_t olKGetDefaultQueue();
-
-  void olKRegisterKernel(const void *ID, ol_symbol_handle_t Kernel);
     
   ol_symbol_handle_t olKGetKernel(const void *ID);
 
