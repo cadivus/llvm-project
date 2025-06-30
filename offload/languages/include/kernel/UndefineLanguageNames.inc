@@ -21,14 +21,6 @@
 #undef MemcpyDeviceToHost
 #undef MemcpyDeviceToDevice
 #undef MemcpyDefault
-#undef GetLastError
-#undef PeekAtLastError
-#undef GetErrorName
-#undef GetErrorString
-#undef GetDeviceCount
-#undef SetDevice
 #undef HostAlloc
 #undef MallocHost
 #undef HostFree
-#undef DriverGetVersion
-#undef GetDeviceProperties

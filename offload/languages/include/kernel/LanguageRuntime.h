@@ -69,23 +69,7 @@ static inline Error_t Memcpy(T *Dst, const T *Src, size_t Size,
 /// DeviceSynchronize.
 Error_t DeviceSynchronize();
 
-Error_t GetLastError();
-
-Error_t PeekAtLastError();
-
-const char *GetErrorName(Error_t Error);
-
-const char *GetErrorString(Error_t Error);
-
-Error_t GetDeviceCount(int *Count);
-
-Error_t SetDevice(int DeviceNo);
-
 Error_t HostFree(void *Ptr);
-
-Error_t DriverGetVersion(int *Version);
-
-Error_t GetDeviceProperties(DeviceProp_t *DeviceProp, int DeviceNo);
 
 ///
 

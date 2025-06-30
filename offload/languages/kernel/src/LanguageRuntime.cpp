@@ -91,37 +91,6 @@ Error_t DeviceSynchronize() {
   return olKConvertResult(Result);
 }
 
-Error_t GetLastError() {
-  // TODO:
-  return Success;
-}
-
-Error_t PeekAtLastError() {
-  // TODO:
-  return Success;
-}
-
-const char *GetErrorName(Error_t Error) {
-  // TODO:
-  return "";
-}
-
-const char *GetErrorString(Error_t Error) {
-  // TODO:
-  return "";
-}
-
-Error_t GetDeviceCount(int *Count) {
-  // TODO:
-  *Count = 1;
-  return Success;
-}
-
-Error_t SetDevice(int DeviceNo) {
-  // TODO:
-  return Success;
-}
-
 Error_t HostAlloc(void **Ptr, size_t Size, unsigned int Flags) {
   // TODO:
   ol_device_handle_t Device = olKGetDefaultDevice();
@@ -136,19 +105,4 @@ Error_t MallocHost(void **Ptr, size_t Size) {
 Error_t HostFree(void *Ptr) {
   ol_result_t Result = olMemFree(Ptr);
   return olKConvertResult(Result);
-}
-
-Error_t DriverGetVersion (int *Version) {
-  // TODO:
-  *Version = 42;
-  return Success;
-}
-
-Error_t GetDeviceProperties(DeviceProp_t *DeviceProp, int DeviceNo) {
-  memcpy(&DeviceProp->name[0], "TESTGPU", sizeof("TESTGPU"));
-  DeviceProp->totalGlobalMem = 1024l * 1024 * 1024 * 40;
-  DeviceProp->multiProcessorCount = 110;
-  DeviceProp->major = 47;
-  DeviceProp->minor = 11;
-  return Success;
 }
