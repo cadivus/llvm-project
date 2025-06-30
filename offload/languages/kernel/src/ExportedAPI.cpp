@@ -37,10 +37,6 @@ ol_queue_handle_t olKGetDefaultQueue() {
   return DefaultQueue;
 }
 
-void olKRegisterKernel(const void *ID, ol_symbol_handle_t Kernel) {
-  StateTy::get().addKernel(ID, Kernel);
-}
-
 ol_symbol_handle_t olKGetKernel(const void *ID) {
   return StateTy::get().getKernel(ID);
 }
