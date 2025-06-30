@@ -12,7 +12,6 @@
 #define COMBINE(X, Y) COMBINE2(X, Y)
 
 #define Error_t COMBINE(LANGUAGE, Error_t)
-#define DeviceProp_t COMBINE(LANGUAGE, DeviceProp_t)
 #define Malloc COMBINE(LANGUAGE, Malloc)
 #define Free COMBINE(LANGUAGE, Free)
 #define Memcpy COMBINE(LANGUAGE, Memcpy)

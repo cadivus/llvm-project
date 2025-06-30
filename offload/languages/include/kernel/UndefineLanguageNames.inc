@@ -9,7 +9,6 @@
 //===----------------------------------------------------------------------===//
 
 #undef Error_t
-#undef DeviceProp_t
 #undef Malloc
 #undef Free
 #undef Memcpy

@@ -14,14 +14,6 @@ enum Error_t : uint32_t {
   Success = 0,
 };
 
-struct DeviceProp_t {
-  char name[256];
-  size_t totalGlobalMem;
-  int multiProcessorCount;
-  int major;
-  int minor;
-};
-
 enum MemcpyKind {
   MemcpyHostToHost = 0,
   MemcpyHostToDevice = 1,
