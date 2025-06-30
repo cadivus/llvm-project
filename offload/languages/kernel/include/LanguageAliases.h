@@ -37,6 +37,3 @@ MAKE_ALIAS(__, void, RegisterSurface, void **, const struct surfaceReference *,
            const void **, const char *, int, int)
 MAKE_ALIAS(__, void, RegisterTexture, void **, const struct textureReference *,
            const void **, const char *, int, int, int)
-
-MAKE_ALIAS(__, unsigned, PushCallConfiguration, dim3, dim3, size_t, void *)
-MAKE_ALIAS(__, unsigned, PopCallConfiguration, dim3 *, dim3 *, size_t *, void *)
