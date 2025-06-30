@@ -12,7 +12,6 @@
 #undef Malloc
 #undef Free
 #undef Memcpy
-#undef DeviceSynchronize
 #undef Success
 #undef MemcpyKind
 #undef MemcpyHostToHost

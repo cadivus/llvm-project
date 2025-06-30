@@ -15,7 +15,6 @@
 #define Malloc COMBINE(LANGUAGE, Malloc)
 #define Free COMBINE(LANGUAGE, Free)
 #define Memcpy COMBINE(LANGUAGE, Memcpy)
-#define DeviceSynchronize COMBINE(LANGUAGE, DeviceSynchronize)
 #define Success COMBINE(LANGUAGE, Success)
 #define MemcpyKind COMBINE(LANGUAGE, MemcpyKind)
 #define MemcpyHostToHost COMBINE(LANGUAGE, MemcpyHostToHost)

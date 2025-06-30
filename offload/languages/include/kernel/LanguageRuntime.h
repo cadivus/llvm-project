@@ -58,9 +58,6 @@ static inline Error_t Memcpy(T *Dst, const T *Src, size_t Size,
 }
 ///}
 
-/// DeviceSynchronize.
-Error_t DeviceSynchronize();
-
 Error_t HostFree(void *Ptr);
 
 ///

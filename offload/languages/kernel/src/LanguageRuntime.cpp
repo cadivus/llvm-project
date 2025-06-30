@@ -84,13 +84,6 @@ Error_t Memcpy(void *Dst, const void *Src, size_t Size, MemcpyKind Kind) {
   return olKConvertResult(Result);
 }
 
-Error_t DeviceSynchronize() {
-  // TODO: This is not correct. We likely want to pipe this through to the plugins.
-  ol_queue_handle_t Queue = olKGetDefaultQueue();
-  ol_result_t Result = olWaitQueue(Queue);
-  return olKConvertResult(Result);
-}
-
 Error_t HostAlloc(void **Ptr, size_t Size, unsigned int Flags) {
   // TODO:
   ol_device_handle_t Device = olKGetDefaultDevice();
