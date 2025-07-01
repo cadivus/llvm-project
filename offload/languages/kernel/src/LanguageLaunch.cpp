@@ -45,37 +45,4 @@ unsigned llvmPopCallConfiguration(dim3 *__grid_size, dim3 *__block_size,
   return 0;
 }
 
-/// Internal kernel launch implementation
-ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
-                                 dim3 BlockDim, void *KernelArgsPtr,
-                                 size_t DynamicSharedMem, void *Stream,
-                                 LLVMOffloadKernelArgsTy *LOKA) {
-  auto Device = olKGetDefaultDevice();
-  ol_kernel_handle_t Kernel = olKGetKernel(KernelID);
-
-  ol_kernel_launch_size_args_t LaunchSizeArgs;
-  LaunchSizeArgs.NumGroupsX = GridDim.x;
-  LaunchSizeArgs.NumGroupsY = std::max(GridDim.y, 1u);
-  LaunchSizeArgs.NumGroupsZ = std::max(GridDim.z, 1u);
-  LaunchSizeArgs.GroupSizeX = BlockDim.x;
-  LaunchSizeArgs.GroupSizeY = std::max(BlockDim.y, 1u);
-  LaunchSizeArgs.GroupSizeZ = std::max(BlockDim.z, 1u);
-  LaunchSizeArgs.DynSharedMemory = DynamicSharedMem;
-  LaunchSizeArgs.Dimensions =
-      1 + !!(GridDim.y * BlockDim.y > 1) + !!(GridDim.z * BlockDim.z > 1);
-
-  ol_queue_handle_t Queue = Stream ? reinterpret_cast<ol_queue_handle_t>(Stream)
-                                   : olKGetDefaultQueue();
-
-  ol_result_t Result;
-  if (LOKA)
-    Result = olLaunchKernel(Queue, Device, Kernel, LOKA->Args, LOKA->Size,
-                            &LaunchSizeArgs, nullptr);
-  else
-    Result = olLaunchKernel(Queue, Device, Kernel, KernelArgsPtr, size_t(-1),
-                            &LaunchSizeArgs, nullptr);
-
-  return Result;
-}
-
 } // extern "C"

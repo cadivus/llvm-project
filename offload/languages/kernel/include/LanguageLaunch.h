@@ -35,12 +35,6 @@ unsigned llvmPushCallConfiguration(dim3 __grid_size, dim3 __block_size,
 unsigned llvmPopCallConfiguration(dim3 *__grid_size, dim3 *__block_size,
                                   size_t *__shared_memory, void *__stream);
 
-/// Internal kernel launch implementation
-ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
-                                 dim3 BlockDim, void *KernelArgsPtr,
-                                 size_t DynamicSharedMem, void *Stream,
-                                 LLVMOffloadKernelArgsTy *LOKA);
-
 }
 
 #endif // LLVM_LANGUAGE_LAUNCH_H
