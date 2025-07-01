@@ -41,19 +41,6 @@ ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
                                  size_t DynamicSharedMem, void *Stream,
                                  LLVMOffloadKernelArgsTy *LOKA);
 
-/// LLVM-style kernel launch entry points
-unsigned __llvmLaunchKernel(const char *KernelID, dim3 GridDim, dim3 BlockDim,
-                            void *KernelArgsPtr, size_t DynamicSharedMem,
-                            void *Stream);
-
-unsigned __llvmLaunchKernel_spt(const char *KernelID, dim3 GridDim,
-                                dim3 BlockDim, void *KernelArgsPtr,
-                                size_t DynamicSharedMem, void *Stream);
-
-unsigned __llvmLaunchKernel_ptsz(const char *KernelID, dim3 GridDim,
-                                 dim3 BlockDim, void *KernelArgsPtr,
-                                 size_t DynamicSharedMem, void *Stream);
-
 }
 
 #endif // LLVM_LANGUAGE_LAUNCH_H

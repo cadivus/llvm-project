@@ -78,19 +78,4 @@ ol_result_t llvmLaunchKernelImpl(const char *KernelID, dim3 GridDim,
   return Result;
 }
 
-#define LLVM_STYLE_LAUNCH(SUFFIX, PER_THREAD_STREAM)                           \
-unsigned __llvmLaunchKernel##SUFFIX(const char *KernelID, dim3 GridDim,     \
-                                    dim3 BlockDim, void *KernelArgsPtr,     \
-                                    size_t DynamicSharedMem, void *Stream) {\
-  auto *LOKA = reinterpret_cast<LLVMOffloadKernelArgsTy *>(KernelArgsPtr);  \
-  ol_result_t Result =                                                      \
-      llvmLaunchKernelImpl(KernelID, GridDim, BlockDim, KernelArgsPtr,      \
-                           DynamicSharedMem, Stream, LOKA);                 \
-  return Result ? Result->Code : 0;                                         \
-}
-
-LLVM_STYLE_LAUNCH(, false);
-LLVM_STYLE_LAUNCH(_spt, true);
-LLVM_STYLE_LAUNCH(_ptsz, true);
-
 } // extern "C"
