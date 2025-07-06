@@ -37,6 +37,7 @@ enum class FPType {
   IEEE754_Binary32,
   IEEE754_Binary64,
   IEEE754_Binary128,
+  PPC_DoubleDouble,
   X86_Binary80,
 };
 
@@ -123,6 +124,14 @@ template <> struct FPLayout<FPType::IEEE754_Binary128> {
   LIBC_INLINE_VAR static constexpr int SIGN_LEN = 1;
   LIBC_INLINE_VAR static constexpr int EXP_LEN = 15;
   LIBC_INLINE_VAR static constexpr int SIG_LEN = 112;
+  LIBC_INLINE_VAR static constexpr int FRACTION_LEN = SIG_LEN;
+};
+
+template <> struct FPLayout<FPType::PPC_DoubleDouble> {
+  using StorageType = UInt128;
+  LIBC_INLINE_VAR static constexpr int SIGN_LEN = 1;
+  LIBC_INLINE_VAR static constexpr int EXP_LEN = 11;
+  LIBC_INLINE_VAR static constexpr int SIG_LEN = 106;
   LIBC_INLINE_VAR static constexpr int FRACTION_LEN = SIG_LEN;
 };
 
@@ -790,6 +799,8 @@ template <typename T> LIBC_INLINE static constexpr FPType get_fp_type() {
       return FPType::IEEE754_Binary64;
     else if constexpr (__LDBL_MANT_DIG__ == 64)
       return FPType::X86_Binary80;
+    else if constexpr (__LDBL_MANT_DIG__ == 106)
+      return FPType::PPC_DoubleDouble;
     else if constexpr (__LDBL_MANT_DIG__ == 113)
       return FPType::IEEE754_Binary128;
   }
