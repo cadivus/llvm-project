@@ -17,6 +17,10 @@
 
 #include "../kernel/UndefineLanguageNames.inc"
 
+extern "C" {
+void __cudaRegisterFatBinaryEnd(void *) {}
+}
+
 #undef LANGUAGE
 
 using cudaDeviceProp = cudaDeviceProp_t;
