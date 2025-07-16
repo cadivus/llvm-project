@@ -65,10 +65,6 @@ Error_t HostFree(void *Ptr);
 #if defined(__AMDGPU__) || defined(__NVPTX__)
 #include <gpuintrin.h>
 
-__device__ inline __attribute__((convergent)) void __syncthreads() {
-  __gpu_sync_threads();
-}
-
 #define __LLVM_OFFLOAD_DEVICE_BUILTIN(FIELD, OFFSET)                           \
   __declspec(property(get = __get_##FIELD,                                     \
                       put = __put_##FIELD)) unsigned int FIELD;                \
