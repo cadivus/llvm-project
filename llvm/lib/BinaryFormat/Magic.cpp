@@ -39,14 +39,21 @@ file_magic llvm::identify_magic(StringRef Magic) {
     if (startswith(Magic, "\0\0\xFF\xFF")) {
       size_t MinSize =
           offsetof(COFF::BigObjHeader, UUID) + sizeof(COFF::BigObjMagic);
-      if (Magic.size() < MinSize)
+      if (Magic.size() < MinSize) {
+        printf("file_magic::coff_import_library \n");
         return file_magic::coff_import_library;
+      }
 
       const char *Start = Magic.data() + offsetof(COFF::BigObjHeader, UUID);
-      if (memcmp(Start, COFF::BigObjMagic, sizeof(COFF::BigObjMagic)) == 0)
+      if (memcmp(Start, COFF::BigObjMagic, sizeof(COFF::BigObjMagic)) == 0) {
+        printf("file_magic::coff_object \n");
         return file_magic::coff_object;
-      if (memcmp(Start, COFF::ClGlObjMagic, sizeof(COFF::BigObjMagic)) == 0)
+      }
+      if (memcmp(Start, COFF::ClGlObjMagic, sizeof(COFF::BigObjMagic)) == 0) {
+        printf("file_magic::coff_cl_gl_object \n");
         return file_magic::coff_cl_gl_object;
+      }
+      printf("file_magic::coff_import_library \n");
       return file_magic::coff_import_library;
     }
     // Windows resource file
@@ -117,18 +124,24 @@ file_magic llvm::identify_magic(StringRef Magic) {
       if (Magic[high] == 0) {
         switch (Magic[low]) {
         default:
+          printf("file_magic::elf \n");
           return file_magic::elf;
         case 1:
+          printf("file_magic::elf_relocatabl \n");
           return file_magic::elf_relocatable;
         case 2:
+          printf("file_magic::elf_executable \n");
           return file_magic::elf_executable;
         case 3:
+          printf("file_magic::elf_shared_object \n");
           return file_magic::elf_shared_object;
         case 4:
+          printf("file_magic::elf_core \n");
           return file_magic::elf_core;
         }
       }
       // It's still some type of ELF file.
+      printf("file_magic::elf \n");
       return file_magic::elf;
     }
     break;
@@ -138,8 +151,10 @@ file_magic llvm::identify_magic(StringRef Magic) {
         startswith(Magic, "\xCA\xFE\xBA\xBF")) {
       // This is complicated by an overlap with Java class files.
       // See the Mach-O section in /usr/share/file/magic for details.
-      if (Magic.size() >= 8 && Magic[7] < 43)
+      if (Magic.size() >= 8 && Magic[7] < 43) {
+        printf("file_magic::macho_universal_binary \n");
         return file_magic::macho_universal_binary;
+      }
     }
     break;
 
@@ -206,20 +221,26 @@ file_magic llvm::identify_magic(StringRef Magic) {
   case 0x84: // Alpha 64-bit
   case 0x66: // MPS R4000 Windows
   case 0x50: // mc68K
-    if (startswith(Magic, "\x50\xed\x55\xba"))
+    if (startswith(Magic, "\x50\xed\x55\xba")) {
+      printf("file_magic::cuda_fatbinary \n");
       return file_magic::cuda_fatbinary;
+    }
     [[fallthrough]];
 
   case 0x4c: // 80386 Windows
   case 0xc4: // ARMNT Windows
-    if (Magic[1] == 0x01)
+    if (Magic[1] == 0x01) {
+      printf("file_magic::coff_object \n");
       return file_magic::coff_object;
+    }
     [[fallthrough]];
 
   case 0x90: // PA-RISC Windows
   case 0x68: // mc68K Windows
-    if (Magic[1] == 0x02)
+    if (Magic[1] == 0x02) {
+      printf("file_magic::coff_object \n");
       return file_magic::coff_object;
+    }
     break;
 
   case 'M': // Possible MS-DOS stub on Windows PE file, MSF/PDB file or a
@@ -228,8 +249,10 @@ file_magic llvm::identify_magic(StringRef Magic) {
       uint32_t off = read32le(Magic.data() + 0x3c);
       // PE/COFF file, either EXE or DLL.
       if (Magic.substr(off).starts_with(
-              StringRef(COFF::PEMagic, sizeof(COFF::PEMagic))))
+              StringRef(COFF::PEMagic, sizeof(COFF::PEMagic)))) {
+        printf("file_magic::pecoff_executable \n");
         return file_magic::pecoff_executable;
+      }
     }
     if (Magic.starts_with("Microsoft C/C++ MSF 7.00\r\n"))
       return file_magic::pdb;
