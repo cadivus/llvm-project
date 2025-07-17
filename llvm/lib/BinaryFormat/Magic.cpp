@@ -33,6 +33,8 @@ static bool startswith(StringRef Magic, const char (&S)[N]) {
 file_magic llvm::identify_magic(StringRef Magic) {
   if (Magic.size() < 4)
     return file_magic::unknown;
+  
+  printf("Switch hex: 0x%02x, Decimal: %u\n", ((unsigned char)Magic[0]), ((unsigned char)Magic[0]));
   switch ((unsigned char)Magic[0]) {
   case 0x00: {
     // COFF bigobj, CL.exe's LTO object file, or short import library file

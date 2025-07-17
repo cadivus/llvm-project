@@ -22,6 +22,12 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_device_handle_t Device = olKGetDefaultDevice();
 
   const cuda_fatbin_header_t* Header = reinterpret_cast<const cuda_fatbin_header_t*>(FW->Data);
+
+  printf("Magic: 0x%08x\n", Header->Magic);
+  printf("Version: %u\n", Header->Version);
+  printf("HeaderSize: %u\n", Header->HeaderSize);
+  printf("FatSize: %llu\n\n\n", Header->FatSize);
+
   size_t Size = static_cast<size_t>(Header->FatSize);
   printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
   ol_program_handle_t Program = nullptr;

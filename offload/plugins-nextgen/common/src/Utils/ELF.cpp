@@ -30,8 +30,10 @@ bool utils::elf::isELF(StringRef Buffer) {
   case file_magic::elf_executable:
   case file_magic::elf_shared_object:
   case file_magic::elf_core:
+    printf("Is ELF\n");
     return true;
   default:
+    printf("Is not ELF\n");
     return false;
   }
 }
