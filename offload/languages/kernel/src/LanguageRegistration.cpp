@@ -28,22 +28,15 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   printf("HeaderSize: %u\n", Header->HeaderSize);
   printf("FatSize: %llu\n\n\n", Header->FatSize);
 
-  // Step 1: Get a pointer to the ELF image
-  const char* ElfImage = reinterpret_cast<const char*>(FW->Data) + Header->HeaderSize;
-
-  // Step 2: Calculate the size of the ELF image
-  size_t Size = static_cast<size_t>(Header->FatSize) - Header->HeaderSize;
-
-  printf("ELF image: %p, Size: %zu bytes\n", ElfImage, Size);
-
-  // Step 3: Pass only the ELF part to olCreateProgram
+  size_t Size = static_cast<size_t>(Header->FatSize);
+  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
   ol_program_handle_t Program = nullptr;
-  ol_result_t Result = olCreateProgram(Device, ElfImage, Size, &Program);
+  ol_result_t Result = olCreateProgram(Device, FW->Data, Size, &Program);
   if (Result && Result->Code) {
-    fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code, Result->Details);
+    fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
+            Result->Details);
     abort();
   }
-
   printf("Program :: %p\n", Program);
 
   olKRegisterProgram(Binary, Program);
