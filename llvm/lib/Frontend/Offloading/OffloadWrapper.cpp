@@ -265,6 +265,8 @@ StructType *getFatbinWrapperTy(Module &M) {
 /// runtime.
 GlobalVariable *createFatbinDesc(Module &M, ArrayRef<char> Image, bool IsHIP,
                                  StringRef Suffix) {
+  printf("Call createFatbinDesc\n");
+
   LLVMContext &C = M.getContext();
   llvm::Type *Int8PtrTy = PointerType::getUnqual(C);
   const llvm::Triple &Triple = M.getTargetTriple();
