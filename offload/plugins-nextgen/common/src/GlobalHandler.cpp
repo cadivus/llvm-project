@@ -29,6 +29,8 @@ using namespace plugin;
 
 Expected<std::unique_ptr<ObjectFile>>
 GenericGlobalHandlerTy::getELFObjectFile(DeviceImageTy &Image) {
+  printf("Call getELFObjectFile\n");
+
   StringRef Buffer = Image.getMemoryBuffer().getBuffer();
   printf("First 128 bytes of Buffer: ");
   for (size_t i = 0; i < 128 && i < Buffer.size(); ++i) {
