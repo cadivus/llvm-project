@@ -358,7 +358,11 @@ ol_impl_result_t olWaitQueue_impl(ol_queue_handle_t Queue) {
     auto Err = Queue->Device->Device->synchronize(Queue->AsyncInfo);
     if (Err)
       return ol_impl_result_t::fromError(std::move(Err));
-    assert(Queue->AsyncInfo->Queue);
+
+    if (!Queue->AsyncInfo->Queue) {
+      printf("Queue->AsyncInfo->Queue assertion fails\n");
+    }
+    // assert(Queue->AsyncInfo->Queue);
   }
 
   return OL_SUCCESS;

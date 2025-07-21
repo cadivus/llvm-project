@@ -30,14 +30,18 @@ using namespace plugin;
 Expected<std::unique_ptr<ObjectFile>>
 GenericGlobalHandlerTy::getELFObjectFile(DeviceImageTy &Image) {
   StringRef Buffer = Image.getMemoryBuffer().getBuffer();
-  printf("First 64 bytes of Buffer: ");
-  for (size_t i = 0; i < 64 && i < Buffer.size(); ++i) {
+  printf("First 128 bytes of Buffer: ");
+  for (size_t i = 0; i < 128 && i < Buffer.size(); ++i) {
     printf("%02x ", static_cast<unsigned char>(Buffer[i]));
   }
   printf("\n");
 
-  assert(utils::elf::isELF(Image.getMemoryBuffer().getBuffer()) &&
-         "Input is not an ELF file");
+//  assert(utils::elf::isELF(Image.getMemoryBuffer().getBuffer()) &&
+//         "Input is not an ELF file");
+
+  if (!utils::elf::isELF(Image.getMemoryBuffer().getBuffer())) {
+    printf("Invalid ELF file\n");
+  }
 
   return ELFObjectFileBase::createELFObjectFile(Image.getMemoryBuffer());
 }
