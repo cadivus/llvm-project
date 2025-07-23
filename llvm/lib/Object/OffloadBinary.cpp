@@ -268,8 +268,6 @@ SmallString<0> OffloadBinary::write(const OffloadingImage &OffloadingData) {
 
 Error object::extractOffloadBinaries(MemoryBufferRef Buffer,
                                      SmallVectorImpl<OffloadFile> &Binaries) {
-  printf("Call extractOffloadBinaries\n");
-
   file_magic Type = identify_magic(Buffer.getBuffer());
   switch (Type) {
   case file_magic::bitcode:
