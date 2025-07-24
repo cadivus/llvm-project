@@ -80,16 +80,45 @@ struct CUDADeviceImageTy : public DeviceImageTy {
   /// Create the CUDA image with the id and the target image pointer.
   CUDADeviceImageTy(int32_t ImageId, GenericDeviceTy &Device,
                     const __tgt_device_image *TgtImage)
-      : DeviceImageTy(ImageId, Device, TgtImage), Module(nullptr) {}
+      : DeviceImageTy(ImageId, Device, TgtImage), Module(nullptr) {
+        printf("create CUDADeviceImageTy\n");
+      }
+
+  void dumpBinaryToFile(const void* data, size_t size, const char* path) {
+    FILE* f = fopen(path, "wb");  // open for writing, binary mode, overwrite
+    if (!f) {
+        perror("Failed to open file for writing");
+        return;
+    }
+
+    size_t written = fwrite(data, 1, size, f);
+    if (written != size) {
+        perror("Failed to write full data");
+    } else {
+        printf("Dumped binary to %s, size: %zu bytes\n", path, size);
+    }
+
+    fclose(f);
+}
 
   /// Load the image as a CUDA module.
   Error loadModule() {
     assert(!Module && "Module already loaded");
 
+    size_t size = getSize();
+    void* start = getStart();
+
+    dumpBinaryToFile(start, size, "/tmp/greifenhain1/myweirdimage");
+
+    printf("Call CUDADeviceImageTy::loadModule\n");
+    printf("  Device image size: %zu bytes\n", getSize());
+
     CUresult Res = cuModuleLoadDataEx(&Module, getStart(), 0, nullptr, nullptr);
-    if (auto Err = Plugin::check(Res, "Error in cuModuleLoadDataEx: %s"))
+    printf("  cuModuleLoadDataEx returned %d\n", Res);
+    if (auto Err = Plugin::check(Res, "Error in cuModuleLoadDataEx: %s")) {
       printf("Plugin::check(Res, \"Error in cuModuleLoadDataEx\"))");
       //return Err;
+    }
 
     return Plugin::success();
   }
