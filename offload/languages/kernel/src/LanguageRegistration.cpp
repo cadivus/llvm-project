@@ -31,7 +31,10 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   size_t Size = static_cast<size_t>(Header->FatSize);
   printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
   ol_program_handle_t Program = nullptr;
-  ol_result_t Result = olCreateProgram(Device, FW->Data, Size, &Program);
+
+  const void* ProgramData = static_cast<const char*>(FW->Data) + 80;
+  ol_result_t Result = olCreateProgram(Device, ProgramData, Size, &Program);
+
   if (Result && Result->Code) {
     fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
             Result->Details);
