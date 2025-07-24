@@ -25,14 +25,15 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
 
   printf("Magic: 0x%08x\n", Header->Magic);
   printf("Version: %u\n", Header->Version);
-  printf("HeaderSize: %u\n", Header->HeaderSize);
+  printf("HeaderSize: %u\n", Header->HeaderSize); // Usually 16
   printf("FatSize: %llu\n\n\n", Header->FatSize);
 
   size_t Size = static_cast<size_t>(Header->FatSize);
+  size_t HeaderSize = static_cast<size_t>(Header->HeaderSize);
   printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
   ol_program_handle_t Program = nullptr;
 
-  const void* ProgramData = static_cast<const char*>(FW->Data) + 80;
+  const void* ProgramData = static_cast<const char*>(FW->Data) + (HeaderSize + 64);
   ol_result_t Result = olCreateProgram(Device, ProgramData, Size, &Program);
 
   if (Result && Result->Code) {
