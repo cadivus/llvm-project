@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "LanguageRegistration.h"
+#include <inttypes.h>
 
 typedef struct __attribute__((aligned(8)))
 {
@@ -18,15 +19,39 @@ typedef struct __attribute__((aligned(8)))
   unsigned long long int FatSize;
 } cuda_fatbin_header_t;
 
+struct  __attribute__((__packed__)) fat_text_header
+{
+    uint16_t kind;
+    uint16_t unknown1;
+    uint8_t header_size;
+    uint64_t size;
+    uint32_t compressed_size;       // Size of compressed data
+    uint32_t unknown2;              // Address size for PTX?
+    uint16_t minor;
+    uint16_t major;
+    uint32_t arch;
+    uint32_t obj_name_offset;
+    uint32_t obj_name_len;
+    uint64_t flags;
+    uint64_t zero;                  // Alignment for compression?
+    uint64_t decompressed_size;     // Length of compressed data in decompressed representation.
+                                    // There is an uncompressed footer so this is generally smaller
+                                    // than size.
+};
+
 static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_device_handle_t Device = olKGetDefaultDevice();
 
   const cuda_fatbin_header_t* Header = reinterpret_cast<const cuda_fatbin_header_t*>(FW->Data);
+  const fat_text_header* Header2 = reinterpret_cast<const fat_text_header*>(FW->Data) + 16;
 
   printf("Magic: 0x%08x\n", Header->Magic);
   printf("Version: %u\n", Header->Version);
   printf("HeaderSize: %u\n", Header->HeaderSize); // Usually 16
   printf("FatSize: %llu\n\n\n", Header->FatSize);
+
+
+  printf("Header2 header_size: %" PRIu32 "\n", Header2->header_size);
 
   size_t Size = static_cast<size_t>(Header->FatSize);
   size_t HeaderSize = static_cast<size_t>(Header->HeaderSize);
