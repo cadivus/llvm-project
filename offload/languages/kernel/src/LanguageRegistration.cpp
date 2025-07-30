@@ -11,15 +11,15 @@
 #include "LanguageRegistration.h"
 #include <inttypes.h>
 
-typedef struct __attribute__((aligned(8)))
+typedef struct
 {
-  unsigned int Magic;
-  unsigned short Version;
-  unsigned short HeaderSize;
-  unsigned long long int FatSize;
+  uint32_t Magic;
+  uint16_t Version;
+  uint16_t HeaderSize;
+  uint64_t FatSize;
 } cuda_fatbin_header_t;
 
-typedef struct __attribute__((aligned(8)))
+typedef struct
 {
     uint16_t kind;
     uint16_t unknown1;
