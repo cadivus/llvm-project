@@ -11,7 +11,7 @@
 #include "LanguageRegistration.h"
 #include <inttypes.h>
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   uint32_t Magic;
   uint16_t Version;
@@ -19,7 +19,7 @@ typedef struct
   uint64_t FatSize;
 } cuda_fatbin_header_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
     uint16_t kind;
     uint16_t unknown1;
