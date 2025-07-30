@@ -19,7 +19,7 @@ typedef struct __attribute__((aligned(8)))
   unsigned long long int FatSize;
 } cuda_fatbin_header_t;
 
-struct  __attribute__((__packed__)) fat_text_header
+typedef struct __attribute__((aligned(8)))
 {
     uint16_t kind;
     uint16_t unknown1;
@@ -37,18 +37,20 @@ struct  __attribute__((__packed__)) fat_text_header
     uint64_t decompressed_size;     // Length of compressed data in decompressed representation.
                                     // There is an uncompressed footer so this is generally smaller
                                     // than size.
-};
+} fat_text_header;
 
 static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_device_handle_t Device = olKGetDefaultDevice();
 
   const cuda_fatbin_header_t* Header = reinterpret_cast<const cuda_fatbin_header_t*>(FW->Data);
-  const fat_text_header* Header2 = reinterpret_cast<const fat_text_header*>(FW->Data) + 16;
 
   printf("Magic: 0x%08x\n", Header->Magic);
   printf("Version: %u\n", Header->Version);
   printf("HeaderSize: %u\n", Header->HeaderSize); // Usually 16
   printf("FatSize: %llu\n\n\n", Header->FatSize);
+
+
+  const fat_text_header* Header2 = reinterpret_cast<const fat_text_header*>(FW->Data + 16);
 
 
   printf("Header2 header_size: %" PRIu32 "\n", Header2->header_size);
@@ -58,7 +60,7 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
   ol_program_handle_t Program = nullptr;
 
-  const void* ProgramData = static_cast<const char*>(FW->Data) + (HeaderSize + 64);
+  const void* ProgramData = static_cast<const char*>(FW->Data + (HeaderSize + 64));
   ol_result_t Result = olCreateProgram(Device, ProgramData, Size, &Program);
 
   if (Result && Result->Code) {
