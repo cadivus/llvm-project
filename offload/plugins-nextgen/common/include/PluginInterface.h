@@ -233,16 +233,16 @@ public:
 
   /// Get the image starting address.
   void *getStart() const { 
-    printf("\n\nCall DeviceImageTy::getStart\n");
-
-    // Cast to byte pointer for safe indexing
-    const unsigned char *bytes = static_cast<const unsigned char *>(TgtImage->ImageStart);
-
-    printf("First 128 bytes of TgtImage: ");
-    for (size_t i = 0; i < 128; ++i) {
-      printf("%02x ", bytes[i]);
-    }
-    printf("\n\n\n");
+//    printf("\n\nCall DeviceImageTy::getStart\n");
+//
+//    // Cast to byte pointer for safe indexing
+//    const unsigned char *bytes = static_cast<const unsigned char *>(TgtImage->ImageStart);
+//
+//    printf("First 128 bytes of TgtImage: ");
+//    for (size_t i = 0; i < 128; ++i) {
+//      printf("%02x ", bytes[i]);
+//    }
+//    printf("\n\n\n");
 
     return TgtImage->ImageStart;
 }
