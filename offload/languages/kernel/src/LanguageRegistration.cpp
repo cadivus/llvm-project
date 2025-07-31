@@ -17,51 +17,48 @@ typedef struct __attribute__((__packed__))
   uint16_t Version;
   uint16_t HeaderSize;
   uint64_t FatSize;
-} cuda_fatbin_header_t;
+} CudaFatbinHeader;
 
 typedef struct __attribute__((__packed__))
 {
-    uint16_t kind;
-    uint16_t unknown1;
-    uint8_t header_size;
-    uint64_t size;
-    uint32_t compressed_size;       // Size of compressed data
-    uint32_t unknown2;              // Address size for PTX?
-    uint16_t minor;
-    uint16_t major;
-    uint32_t arch;
-    uint32_t obj_name_offset;
-    uint32_t obj_name_len;
-    uint64_t flags;
-    uint64_t zero;                  // Alignment for compression?
-    uint64_t decompressed_size;     // Length of compressed data in decompressed representation.
-                                    // There is an uncompressed footer so this is generally smaller
-                                    // than size.
-} fat_text_header;
+    uint16_t Kind;
+    uint16_t Unknown1;
+    uint8_t HeaderSize;
+    uint64_t Size;
+    uint32_t CompressedSize;
+    uint32_t Unknown2;
+    uint16_t Minor;
+    uint16_t Major;
+    uint32_t Arch;
+    uint32_t ObjNameOffset;
+    uint32_t ObjNameLen;
+    uint64_t Flags;
+    uint64_t Zero;
+    uint64_t DecompressedSize;
+} CudaFatbinTextHeader;
 
 static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_device_handle_t Device = olKGetDefaultDevice();
 
-  const cuda_fatbin_header_t* Header = reinterpret_cast<const cuda_fatbin_header_t*>(FW->Data);
+  const CudaFatbinHeader* Header = reinterpret_cast<const CudaFatbinHeader*>(FW->Data);
+  size_t HeaderSize = static_cast<size_t>(Header->HeaderSize); // Usually 16
+  size_t FatbinSize = static_cast<size_t>(Header->FatSize);
+
 
   printf("Magic: 0x%08x\n", Header->Magic);
   printf("Version: %u\n", Header->Version);
   printf("HeaderSize: %u\n", Header->HeaderSize); // Usually 16
   printf("FatSize: %llu\n\n\n", Header->FatSize);
 
+  const CudaFatbinTextHeader* TextHeader = reinterpret_cast<const CudaFatbinTextHeader*>(FW->Data + HeaderSize);
+  size_t TextHeaderSize = static_cast<size_t>(TextHeader->HeaderSize); // Usually 64
 
-  const fat_text_header* Header2 = reinterpret_cast<const fat_text_header*>(FW->Data + 16);
 
-
-  printf("Header2 header_size: %" PRIu32 "\n", Header2->header_size);
-
-  size_t Size = static_cast<size_t>(Header->FatSize);
-  size_t HeaderSize = static_cast<size_t>(Header->HeaderSize);
-  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
+  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, FatbinSize);
   ol_program_handle_t Program = nullptr;
 
-  const void* ProgramData = static_cast<const char*>(FW->Data + (HeaderSize + 64));
-  ol_result_t Result = olCreateProgram(Device, ProgramData, Size, &Program);
+  const void* ProgramData = static_cast<const char*>(FW->Data + (HeaderSize + TextHeaderSize));
+  ol_result_t Result = olCreateProgram(Device, ProgramData, FatbinSize, &Program);
 
   if (Result && Result->Code) {
     fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
