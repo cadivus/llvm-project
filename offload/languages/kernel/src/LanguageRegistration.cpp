@@ -19,6 +19,7 @@ typedef struct __attribute__((__packed__))
   uint64_t FatSize;
 } CudaFatbinHeader;
 
+// Inspired by https://github.com/n-eiling/cuda-fatbin-decompression/blob/master/fatbin-decompress.h
 typedef struct __attribute__((__packed__))
 {
     uint16_t Kind;
