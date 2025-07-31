@@ -23,7 +23,7 @@ typedef struct __attribute__((__packed__))
 {
     uint16_t Kind;
     uint16_t Unknown1;
-    uint8_t HeaderSize;
+    uint32_t HeaderSize;
     uint64_t Size;
     uint32_t CompressedSize;
     uint32_t Unknown2;
@@ -44,21 +44,52 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   size_t HeaderSize = static_cast<size_t>(Header->HeaderSize); // Usually 16
   size_t FatbinSize = static_cast<size_t>(Header->FatSize);
 
+  const void* ProgramData = nullptr;
+  size_t ProgramSize = 0;
+  uint32_t ProgramArch = 0;
 
-  printf("Magic: 0x%08x\n", Header->Magic);
-  printf("Version: %u\n", Header->Version);
-  printf("HeaderSize: %u\n", Header->HeaderSize); // Usually 16
-  printf("FatSize: %llu\n\n\n", Header->FatSize);
+  for (const char *ReadPosition = FW->Data + HeaderSize; ReadPosition < (FW->Data + FatbinSize);) {
+    const CudaFatbinTextHeader* TextHeader = reinterpret_cast<const CudaFatbinTextHeader*>(ReadPosition);
+    size_t TextHeaderSize = static_cast<size_t>(TextHeader->HeaderSize); // Usually 64
+    size_t CubinSize = static_cast<size_t>(TextHeader->Size);
 
-  const CudaFatbinTextHeader* TextHeader = reinterpret_cast<const CudaFatbinTextHeader*>(FW->Data + HeaderSize);
-  size_t TextHeaderSize = static_cast<size_t>(TextHeader->HeaderSize); // Usually 64
+    if (ProgramData == nullptr) {
+      ProgramData = static_cast<const char*>(ReadPosition + TextHeaderSize);
+      ProgramSize = CubinSize;
+      ProgramArch = TextHeader->Arch;
+    }
 
 
-  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, FatbinSize);
+    printf("text_header: fatbin_kind: %u, header_size %u, size %" PRIu64 ", compressed_size %u,\n"
+       "             minor %u, major %u, arch %u, decompressed_size %" PRIu64 "\n"
+       "\tflags: %" PRIu64 "\n",
+       TextHeader->Kind,
+       TextHeader->HeaderSize,
+       TextHeader->Size,
+       TextHeader->CompressedSize,
+       TextHeader->Minor,
+       TextHeader->Major,
+       TextHeader->Arch,
+       TextHeader->DecompressedSize,
+       TextHeader->Flags);
+
+printf("\tunknown fields: unknown1: %u, unknown2: %u, zeros: %" PRIu64 "\n",
+       TextHeader->Unknown1,
+       TextHeader->Unknown2,
+       TextHeader->Zero);
+
+printf("\n\n");
+
+
+    ReadPosition += TextHeaderSize + CubinSize;
+  }
+
+
+
+  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, ProgramSize);
   ol_program_handle_t Program = nullptr;
 
-  const void* ProgramData = static_cast<const char*>(FW->Data + (HeaderSize + TextHeaderSize));
-  ol_result_t Result = olCreateProgram(Device, ProgramData, FatbinSize, &Program);
+  ol_result_t Result = olCreateProgram(Device, ProgramData, ProgramSize, &Program);
 
   if (Result && Result->Code) {
     fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
