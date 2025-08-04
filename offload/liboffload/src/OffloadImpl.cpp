@@ -280,6 +280,26 @@ ol_impl_result_t olGetDeviceInfoSize_impl(ol_device_handle_t Device,
   return olGetDeviceInfoImplDetail(Device, PropName, 0, nullptr, PropSizeRet);
 }
 
+ol_impl_result_t olElfIsCompatibleWithDevice_impl(ol_device_handle_t Device,
+                                                  const void *ElfData,
+                                                  size_t ElfSize,
+                                                  bool *IsCompatible) {
+  GenericDeviceTy *DeviceTy = Device->Device;
+  int32_t DeviceId = DeviceTy->getDeviceId();
+  GenericPluginTy &DevicePlugin = DeviceTy->Plugin;
+
+  StringRef Image(reinterpret_cast<const char *>(ElfData), ElfSize);
+
+  Expected<bool> ResultOrErr = DevicePlugin.isELFCompatible(DeviceId, Image);
+  if (!ResultOrErr) {
+    consumeError(ResultOrErr.takeError());
+    return OL_ERRC_INVALID_ARGUMENT;
+  }
+
+  *IsCompatible = *ResultOrErr;
+  return OL_SUCCESS;
+}
+
 ol_impl_result_t olIterateDevices_impl(ol_device_iterate_cb_t Callback,
                                        void *UserData) {
   for (auto &Platform : Platforms()) {
@@ -339,7 +359,8 @@ ol_impl_result_t olMemFree_impl(void *Address) {
 ol_impl_result_t olCreateQueue_impl(ol_device_handle_t Device,
                                     ol_queue_handle_t *Queue) {
   auto CreatedQueue = std::make_unique<ol_queue_impl_t>(nullptr, Device);
-  auto Err = Device->Device->initAsyncInfo(&(CreatedQueue->AsyncInfo), /*Persistent=*/true);
+  auto Err = Device->Device->initAsyncInfo(&(CreatedQueue->AsyncInfo),
+                                           /*Persistent=*/true);
   if (Err)
     return ol_impl_result_t::fromError(std::move(Err));
 
