@@ -418,6 +418,39 @@ OL_APIEXPORT ol_result_t OL_APICALL olGetDeviceInfoSize(
     size_t *PropSizeRet);
 
 ///////////////////////////////////////////////////////////////////////////////
+/// @brief Checks if the given ELF binary is compatible with the specified
+/// device.
+///
+/// @details
+///    - This function determines whether an ELF image can be executed on the
+///    specified device.
+///
+/// @returns
+///     - ::OL_RESULT_SUCCESS
+///     - ::OL_ERRC_UNINITIALIZED
+///     - ::OL_ERRC_DEVICE_LOST
+///     - ::OL_ERRC_INVALID_DEVICE
+///         + If the provided device handle is invalid.
+///     - ::OL_ERRC_INVALID_ARGUMENT
+///         + If `ElfData` is null or `ElfSize` is zero.
+///     - ::OL_ERRC_NULL_POINTER
+///         + If `IsCompatible` is null.
+///     - ::OL_ERRC_INVALID_NULL_HANDLE
+///         + `NULL == Device`
+///     - ::OL_ERRC_INVALID_NULL_POINTER
+///         + `NULL == ElfData`
+///         + `NULL == IsCompatible`
+OL_APIEXPORT ol_result_t OL_APICALL olElfIsCompatibleWithDevice(
+    // [in] handle of the device to check against
+    ol_device_handle_t Device,
+    // [in] pointer to the ELF image data in memory
+    const void *ElfData,
+    // [in] size in bytes of the ELF image
+    size_t ElfSize,
+    // [out] set to true if the ELF is compatible, false otherwise
+    bool *IsCompatible);
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Represents the type of allocation made with olMemAlloc.
 typedef enum ol_alloc_type_t {
   /// Host allocation
@@ -477,7 +510,8 @@ OL_APIEXPORT ol_result_t OL_APICALL olMemFree(
 /// @brief Enqueue a memcpy operation.
 ///
 /// @details
-///    - For host pointers, use the device returned by olGetHostDevice
+///    - For host pointers, use the host device belonging to the
+///    OL_PLATFORM_BACKEND_HOST platform.
 ///    - If a queue is specified, at least one device must be a non-host device
 ///    - If a queue is not specified, the memcpy happens synchronously
 ///
@@ -754,6 +788,16 @@ typedef struct ol_get_device_info_size_params_t {
 } ol_get_device_info_size_params_t;
 
 ///////////////////////////////////////////////////////////////////////////////
+/// @brief Function parameters for olElfIsCompatibleWithDevice
+/// @details Each entry is a pointer to the parameter passed to the function;
+typedef struct ol_elf_is_compatible_with_device_params_t {
+  ol_device_handle_t *pDevice;
+  const void **pElfData;
+  size_t *pElfSize;
+  bool **pIsCompatible;
+} ol_elf_is_compatible_with_device_params_t;
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Function parameters for olMemAlloc
 /// @details Each entry is a pointer to the parameter passed to the function;
 typedef struct ol_mem_alloc_params_t {
@@ -909,6 +953,14 @@ OL_APIEXPORT ol_result_t OL_APICALL olGetDeviceInfoWithCodeLoc(
 OL_APIEXPORT ol_result_t OL_APICALL olGetDeviceInfoSizeWithCodeLoc(
     ol_device_handle_t Device, ol_device_info_t PropName, size_t *PropSizeRet,
     ol_code_location_t *CodeLocation);
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Variant of olElfIsCompatibleWithDevice that also sets source code
+/// location information
+/// @details See also ::olElfIsCompatibleWithDevice
+OL_APIEXPORT ol_result_t OL_APICALL olElfIsCompatibleWithDeviceWithCodeLoc(
+    ol_device_handle_t Device, const void *ElfData, size_t ElfSize,
+    bool *IsCompatible, ol_code_location_t *CodeLocation);
 
 ///////////////////////////////////////////////////////////////////////////////
 /// @brief Variant of olMemAlloc that also sets source code location information

@@ -28,6 +28,11 @@ ol_impl_result_t olGetDeviceInfoSize_impl(ol_device_handle_t Device,
                                           ol_device_info_t PropName,
                                           size_t *PropSizeRet);
 
+ol_impl_result_t olElfIsCompatibleWithDevice_impl(ol_device_handle_t Device,
+                                                  const void *ElfData,
+                                                  size_t ElfSize,
+                                                  bool *IsCompatible);
+
 ol_impl_result_t olMemAlloc_impl(ol_device_handle_t Device,
                                  ol_alloc_type_t Type, size_t Size,
                                  void **AllocationOut);

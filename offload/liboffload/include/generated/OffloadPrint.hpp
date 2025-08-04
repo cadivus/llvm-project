@@ -446,6 +446,23 @@ operator<<(llvm::raw_ostream &os,
 }
 
 inline llvm::raw_ostream &
+operator<<(llvm::raw_ostream &os,
+           const struct ol_elf_is_compatible_with_device_params_t *params) {
+  os << ".Device = ";
+  printPtr(os, *params->pDevice);
+  os << ", ";
+  os << ".ElfData = ";
+  printPtr(os, *params->pElfData);
+  os << ", ";
+  os << ".ElfSize = ";
+  os << *params->pElfSize;
+  os << ", ";
+  os << ".IsCompatible = ";
+  printPtr(os, *params->pIsCompatible);
+  return os;
+}
+
+inline llvm::raw_ostream &
 operator<<(llvm::raw_ostream &os, const struct ol_mem_alloc_params_t *params) {
   os << ".Device = ";
   printPtr(os, *params->pDevice);

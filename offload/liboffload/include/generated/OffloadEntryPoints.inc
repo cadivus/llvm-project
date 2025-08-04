@@ -308,6 +308,60 @@ ol_result_t olGetDeviceInfoSizeWithCodeLoc(ol_device_handle_t Device,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ol_impl_result_t olElfIsCompatibleWithDevice_val(ol_device_handle_t Device,
+                                                 const void *ElfData,
+                                                 size_t ElfSize,
+                                                 bool *IsCompatible) {
+  if (offloadConfig().ValidationEnabled) {
+    if (NULL == Device) {
+      return OL_ERRC_INVALID_NULL_HANDLE;
+    }
+
+    if (NULL == ElfData) {
+      return OL_ERRC_INVALID_NULL_POINTER;
+    }
+
+    if (NULL == IsCompatible) {
+      return OL_ERRC_INVALID_NULL_POINTER;
+    }
+  }
+
+  return llvm::offload::olElfIsCompatibleWithDevice_impl(Device, ElfData,
+                                                         ElfSize, IsCompatible);
+}
+OL_APIEXPORT ol_result_t OL_APICALL
+olElfIsCompatibleWithDevice(ol_device_handle_t Device, const void *ElfData,
+                            size_t ElfSize, bool *IsCompatible) {
+  if (offloadConfig().TracingEnabled) {
+    llvm::errs() << "---> olElfIsCompatibleWithDevice";
+  }
+
+  ol_result_t Result =
+      olElfIsCompatibleWithDevice_val(Device, ElfData, ElfSize, IsCompatible);
+
+  if (offloadConfig().TracingEnabled) {
+    ol_elf_is_compatible_with_device_params_t Params = {
+        &Device, &ElfData, &ElfSize, &IsCompatible};
+    llvm::errs() << "(" << &Params << ")";
+    llvm::errs() << "-> " << Result << "\n";
+    if (Result && Result->Details) {
+      llvm::errs() << "     *Error Details* " << Result->Details << " \n";
+    }
+  }
+  return Result;
+}
+ol_result_t olElfIsCompatibleWithDeviceWithCodeLoc(
+    ol_device_handle_t Device, const void *ElfData, size_t ElfSize,
+    bool *IsCompatible, ol_code_location_t *CodeLocation) {
+  currentCodeLocation() = CodeLocation;
+  ol_result_t Result =
+      ::olElfIsCompatibleWithDevice(Device, ElfData, ElfSize, IsCompatible);
+
+  currentCodeLocation() = nullptr;
+  return Result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 ol_impl_result_t olMemAlloc_val(ol_device_handle_t Device, ol_alloc_type_t Type,
                                 size_t Size, void **AllocationOut) {
   if (offloadConfig().ValidationEnabled) {
