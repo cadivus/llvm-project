@@ -9,20 +9,95 @@
 //===----------------------------------------------------------------------===//
 
 #include "LanguageRegistration.h"
+#include "OffloadAPI.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+#include <inttypes.h>
+
+typedef struct __attribute__((__packed__)) {
+  uint32_t Magic;
+  uint16_t Version;
+  uint16_t HeaderSize;
+  uint64_t FatSize;
+} CudaFatbinHeader;
+
+// Inspired by
+// https://github.com/n-eiling/cuda-fatbin-decompression/blob/master/fatbin-decompress.h
+typedef struct __attribute__((__packed__)) {
+  uint16_t Kind;
+  uint16_t Unknown1;
+  uint32_t HeaderSize;
+  uint64_t Size;
+  uint32_t CompressedSize;
+  uint32_t Unknown2;
+  uint16_t Minor;
+  uint16_t Major;
+  uint32_t Arch;
+  uint32_t ObjNameOffset;
+  uint32_t ObjNameLen;
+  uint64_t Flags;
+  uint64_t Zero;
+  uint64_t DecompressedSize;
+} CudaFatbinTextHeader;
 
 static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_device_handle_t Device = olKGetDefaultDevice();
 
-  size_t Size = FW->DataEnd - FW->Data;
-  printf("%p : %p :: %zu \n", FW->Data, FW->DataEnd, Size);
+  const CudaFatbinHeader *Header =
+      reinterpret_cast<const CudaFatbinHeader *>(FW->Data);
+  size_t HeaderSize = static_cast<size_t>(Header->HeaderSize); // Usually 16
+  size_t FatbinSize = static_cast<size_t>(Header->FatSize);
+
+  const void *ProgramData = nullptr;
+  size_t ProgramSize = 0;
+  uint32_t ProgramArch = 0;
+
+  const char *ReadPosition = FW->Data + HeaderSize;
+  while (ReadPosition < (FW->Data + FatbinSize)) {
+    const CudaFatbinTextHeader *TextHeader =
+        reinterpret_cast<const CudaFatbinTextHeader *>(ReadPosition);
+    size_t TextHeaderSize =
+        static_cast<size_t>(TextHeader->HeaderSize); // Usually 64
+    size_t CubinSize = static_cast<size_t>(TextHeader->Size);
+    const void *CubinData =
+        static_cast<const char *>(ReadPosition + TextHeaderSize);
+
+    uint32_t Arch = TextHeader->Arch;
+    bool IsCompatible = false;
+    ol_result_t CompatibilityCheckResult = olElfIsCompatibleWithDevice(
+        Device, CubinData, CubinSize, &IsCompatible);
+
+    if (CompatibilityCheckResult && CompatibilityCheckResult->Code) {
+      fprintf(stderr, "Failed to check for device compatibility (%i): %s\n",
+              CompatibilityCheckResult->Code,
+              CompatibilityCheckResult->Details);
+      abort();
+    }
+
+    if (IsCompatible && Arch > ProgramArch) {
+      ProgramData = CubinData;
+      ProgramSize = CubinSize;
+      ProgramArch = Arch;
+    }
+
+    ReadPosition += TextHeaderSize + CubinSize;
+  }
+
+  if (ProgramData == nullptr) {
+    fprintf(stderr, "Failed to find compatible binary\n");
+    abort();
+  }
+
   ol_program_handle_t Program = nullptr;
-  ol_result_t Result = olCreateProgram(Device, FW->Data, Size, &Program);
+
+  ol_result_t Result =
+      olCreateProgram(Device, ProgramData, ProgramSize, &Program);
+
   if (Result && Result->Code) {
     fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
             Result->Details);
     abort();
   }
-  printf("Program :: %p\n", Program);
 
   olKRegisterProgram(Binary, Program);
 }
