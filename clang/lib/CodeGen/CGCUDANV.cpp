@@ -1212,8 +1212,6 @@ void CGNVCUDARuntime::createOffloadingEntries() {
   if (CGM.getLangOpts().OffloadViaLLVM)
     Kind = llvm::object::OffloadKind::OFK_LLVM;
 
-  llvm::errs() << __PRETTY_FUNCTION__ << " : : " << EmittedKernels.size()
-               << "\n";
   llvm::Module &M = CGM.getModule();
   for (KernelInfo &I : EmittedKernels)
     llvm::offloading::emitOffloadingEntry(
