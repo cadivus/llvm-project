@@ -7701,11 +7701,6 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   // Host-side offloading compilation receives all device-side outputs. Include
   // them in the host compilation depending on the target. If the host inputs
   // are not empty we use the new-driver scheme, otherwise use the old scheme.
-  if (CudaDeviceInput)
-    llvm::errs() << CudaDeviceInput->getAsString() << "\n";
-  llvm::errs() << "HOI " << HostOffloadingInputs.size() << "\n";
-  for (auto &I : HostOffloadingInputs)
-    llvm::errs() << I.getAsString() << "\n";
   if ((IsCuda || IsHIP) && CudaDeviceInput) {
     CmdArgs.push_back("-fcuda-include-gpubinary");
     CmdArgs.push_back(CudaDeviceInput->getFilename());
