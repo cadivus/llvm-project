@@ -1012,7 +1012,6 @@ linkAndWrapDeviceFiles(ArrayRef<SmallVector<OffloadFile>> LinkerInputFiles,
              A.StringData["arch"] > B.StringData["arch"] ||
              A.TheOffloadKind < B.TheOffloadKind;
     });
-    llvm::errs() << " Img " << Input.size() << " : Kind " << Kind << "\n";
     auto BundledImagesOrErr = bundleLinkedOutput(Input, Args, Kind);
     if (!BundledImagesOrErr)
       return BundledImagesOrErr.takeError();
