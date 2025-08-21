@@ -84,6 +84,9 @@ struct __tgt_async_info {
   /// ensure it is a valid location while the transfer to the device is
   /// happening.
   KernelLaunchEnvironmentTy KernelLaunchEnvironment;
+
+  /// Flag to indicate the Queue should be persistent.
+  bool PersistentQueue = false;
 };
 
 /// This struct contains all of the arguments to a target kernel region launch.
@@ -119,6 +122,9 @@ static_assert(sizeof(KernelArgsTy) ==
 
 /// Flat array of kernel launch parameters and their total size.
 struct KernelLaunchParamsTy {
+  /// Constant used to signal the size is unknown and the Data is actually a
+  /// pointer array to the arguments.
+  static constexpr size_t UnknownSize = ~size_t(0);
   /// Size of the Data array.
   size_t Size = 0;
   /// Flat array of kernel parameters.

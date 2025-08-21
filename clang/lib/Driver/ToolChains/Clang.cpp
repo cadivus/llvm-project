@@ -940,13 +940,15 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("__clang_openmp_device_functions.h");
   }
 
-  if (Args.hasArg(options::OPT_foffload_via_llvm)) {
+  if (C.getActiveOffloadKinds() &&
+      Args.hasArg(options::OPT_foffload_via_llvm)) {
     // Add llvm_wrappers/* to our system include path.  This lets us wrap
     // standard library headers and other headers.
     SmallString<128> P(D.ResourceDir);
     llvm::sys::path::append(P, "include", "llvm_offload_wrappers");
     CmdArgs.append({"-internal-isystem", Args.MakeArgString(P), "-include"});
-    if (JA.isDeviceOffloading(Action::OFK_OpenMP))
+    if (!JA.isDeviceOffloading(Action::OFK_None) &&
+        !JA.isDeviceOffloading(Action::OFK_Host))
       CmdArgs.push_back("__llvm_offload_device.h");
     else
       CmdArgs.push_back("__llvm_offload_host.h");
@@ -4876,13 +4878,15 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   bool IsExtractAPI = isa<ExtractAPIJobAction>(JA);
   bool IsDeviceOffloadAction = !(JA.isDeviceOffloading(Action::OFK_None) ||
                                  JA.isDeviceOffloading(Action::OFK_Host));
+  bool IsOffloadViaLLVM = Args.hasFlag(
+      options::OPT_foffload_via_llvm, options::OPT_fno_offload_via_llvm, false);
+  bool IsNewDriver = Args.hasFlag(
+      options::OPT_offload_new_driver, options::OPT_no_offload_new_driver,
+      C.isOffloadingHostKind(Action::OFK_Cuda) || IsOffloadViaLLVM);
   bool IsHostOffloadingAction =
       JA.isHostOffloading(Action::OFK_OpenMP) ||
       JA.isHostOffloading(Action::OFK_SYCL) ||
-      (JA.isHostOffloading(C.getActiveOffloadKinds()) &&
-       Args.hasFlag(options::OPT_offload_new_driver,
-                    options::OPT_no_offload_new_driver,
-                    C.isOffloadingHostKind(Action::OFK_Cuda)));
+      (JA.isHostOffloading(C.getActiveOffloadKinds()) && IsNewDriver);
 
   bool IsRDCMode =
       Args.hasFlag(options::OPT_fgpu_rdc, options::OPT_fno_gpu_rdc, false);
@@ -5247,7 +5251,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
       if (IsDeviceOffloadAction && !JA.isDeviceOffloading(Action::OFK_OpenMP) &&
           !Args.hasFlag(options::OPT_offload_new_driver,
                         options::OPT_no_offload_new_driver,
-                        C.isOffloadingHostKind(Action::OFK_Cuda)) &&
+                        C.isOffloadingHostKind(Action::OFK_Cuda) ||
+                            Args.hasFlag(options::OPT_foffload_via_llvm,
+                                         options::OPT_fno_offload_via_llvm,
+                                         false)) &&
           !Triple.isAMDGPU()) {
         D.Diag(diag::err_drv_unsupported_opt_for_target)
             << Args.getLastArg(options::OPT_foffload_lto,
@@ -6633,8 +6640,6 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   // device offloading action other than OpenMP.
   if (Args.hasFlag(options::OPT_fopenmp, options::OPT_fopenmp_EQ,
                    options::OPT_fno_openmp, false) &&
-      !Args.hasFlag(options::OPT_foffload_via_llvm,
-                    options::OPT_fno_offload_via_llvm, false) &&
       (JA.isDeviceOffloading(Action::OFK_None) ||
        JA.isDeviceOffloading(Action::OFK_OpenMP))) {
     switch (D.getOpenMPRuntime(Args)) {
@@ -7777,9 +7782,6 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   // so that only the relevant declarations are emitted.
   if (IsOpenMPDevice) {
     CmdArgs.push_back("-fopenmp-is-target-device");
-    // If we are offloading cuda/hip via llvm, it's also "cuda device code".
-    if (Args.hasArg(options::OPT_foffload_via_llvm))
-      CmdArgs.push_back("-fcuda-is-device");
 
     if (OpenMPDeviceInput) {
       CmdArgs.push_back("-fopenmp-host-ir-file-path");
