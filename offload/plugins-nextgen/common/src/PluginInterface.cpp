@@ -1577,10 +1577,12 @@ Error GenericDeviceTy::launchKernel(void *EntryPtr, void **ArgPtrs,
   return Err;
 }
 
-Error GenericDeviceTy::initAsyncInfo(__tgt_async_info **AsyncInfoPtr) {
+Error GenericDeviceTy::initAsyncInfo(__tgt_async_info **AsyncInfoPtr,
+                                     bool Persistent) {
   assert(AsyncInfoPtr && "Invalid async info");
 
   *AsyncInfoPtr = new __tgt_async_info();
+  (*AsyncInfoPtr)->PersistentQueue = Persistent;
 
   AsyncInfoWrapperTy AsyncInfoWrapper(*this, *AsyncInfoPtr);
 
