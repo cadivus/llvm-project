@@ -193,8 +193,21 @@ extern "C" {
 void llvmRegisterFunction(const char *Binary, const char *KernelID,
                           char *KernelName, const char *KernelName1, int,
                           uint3 *, uint3 *, dim3 *, dim3 *, int *) {
-  // TODO: Implement kernel launches
-  fprintf(stderr, "RegisterFunction is not implemented!");
+  // printf("%s :: %p :: %p : %s : %s \n", __PRETTY_FUNCTION__, Binary,
+  // KernelID,
+  //        KernelName, KernelName1);
+  ol_symbol_handle_t Kernel;
+  ol_program_handle_t Program = olKGetProgram(Binary);
+  ol_result_t Result =
+      olGetSymbol(Program, KernelName, OL_SYMBOL_KIND_KERNEL, &Kernel);
+  if (Result && Result->Code) {
+    fprintf(stderr, "Failed to register kernel (%i): %s\n", Result->Code,
+            Result->Details);
+    abort();
+  }
+
+  // printf("K %p : %p\n", KernelID, Kernel);
+  olKRegisterKernel(KernelID, Kernel);
 }
 
 const char *llvmRegisterFatBinary(const char *Binary) {

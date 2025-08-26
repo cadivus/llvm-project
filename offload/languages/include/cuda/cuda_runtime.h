@@ -18,3 +18,5 @@
 #include "../kernel/UndefineLanguageNames.inc"
 
 #undef LANGUAGE
+
+using cudaDeviceProp = cudaDeviceProp_t;
