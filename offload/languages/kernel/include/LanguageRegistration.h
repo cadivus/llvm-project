@@ -34,7 +34,7 @@ template <typename T> T readAndAdvance(const char *&Ptr) {
 
 } // namespace
 
-static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW);
+static void readTUFatbin(const char *Binary);
 
 static void readHIPFatbinEntries(const char *Binary, const char *HIPFatbinPtr);
 

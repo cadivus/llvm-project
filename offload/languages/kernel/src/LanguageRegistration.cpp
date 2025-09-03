@@ -54,11 +54,20 @@ typedef struct __attribute__((__packed__)) {
   char IdString[];
 } HipFatbinBundleEntry;
 
-static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
+static void readTUFatbin(const char *Binary) {
+  const char *DataStart = Binary;
+
+  uint32_t Magic = *reinterpret_cast<const uint32_t *>(DataStart);
+  if (Magic == 0x466243b1) {
+    printf(" ===== unwrap\n\n");
+    const auto *FW = reinterpret_cast<const FatbinWrapperTy *>(Binary);
+    DataStart = FW->Data;
+  }
+
   ol_device_handle_t Device = olKGetDefaultDevice();
 
   const CudaFatbinHeader *Header =
-      reinterpret_cast<const CudaFatbinHeader *>(FW->Data);
+      reinterpret_cast<const CudaFatbinHeader *>(DataStart);
   size_t HeaderSize = static_cast<size_t>(Header->HeaderSize); // Usually 16
   size_t FatbinSize = static_cast<size_t>(Header->FatSize);
 
@@ -66,8 +75,8 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   size_t ProgramSize = 0;
   uint32_t ProgramArch = 0;
 
-  const char *ReadPosition = FW->Data + HeaderSize;
-  while (ReadPosition < (FW->Data + FatbinSize)) {
+  const char *ReadPosition = DataStart + HeaderSize;
+  while (ReadPosition < (DataStart + FatbinSize)) {
     const CudaFatbinTextHeader *TextHeader =
         reinterpret_cast<const CudaFatbinTextHeader *>(ReadPosition);
     size_t TextHeaderSize =
@@ -206,12 +215,32 @@ const char *llvmRegisterFatBinary(const char *Binary) {
   // printf("%s : %s : %lu\n", FW->Data, HIP_FATBIN_MAGIC_STR,
   //        HIP_FATBIN_MAGIC_STR_LEN);
   if (FW->Magic == 0x466243b1) {
-    readTUFatbin(Binary, FW);
+
+const uint32_t *DataFW32 =
+    reinterpret_cast<const uint32_t *>(FW->Data);
+const uint32_t *DataBin32 =
+    reinterpret_cast<const uint32_t *>(Binary);
+
+printf("FW->Data (%p): ", (const void *)DataFW32);
+for (size_t i = 0; i < 16; i++) {
+  printf("%08x ", DataFW32[i]);
+}
+printf("\n");
+
+printf("Binary   (%p): ", (const void *)DataBin32);
+for (size_t i = 0; i < 16; i++) {
+  printf("%08x ", DataBin32[i]);
+}
+printf("\n");
+
+
+
+    readTUFatbin(Binary);
   } else if (FW->Magic == 0x48495046) {
     if (!memcmp(FW->Data, HIP_FATBIN_MAGIC_STR, HIP_FATBIN_MAGIC_STR_LEN))
       readHIPFatbinEntries(Binary, FW->Data);
     else
-      readTUFatbin(Binary, FW);
+      readTUFatbin(Binary);
   } else {
     fprintf(stderr, "Unknown fatbin format");
   }
