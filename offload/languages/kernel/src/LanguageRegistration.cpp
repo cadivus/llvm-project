@@ -105,7 +105,7 @@ static void readTUFatbin(const char *Binary, const FatbinWrapperTy *FW) {
   ol_program_handle_t Program = nullptr;
 
   ol_result_t Result =
-      olCreateProgram(Device, ProgramData, ProgramSize, &Program);
+      olCreateProgram(Device, FW->Data, FatbinSize, &Program);
 
   if (Result && Result->Code) {
     fprintf(stderr, "Failed to register device code (%i): %s\n", Result->Code,
@@ -206,13 +206,19 @@ const char *llvmRegisterFatBinary(const char *Binary) {
   // printf("%s : %s : %lu\n", FW->Data, HIP_FATBIN_MAGIC_STR,
   //        HIP_FATBIN_MAGIC_STR_LEN);
   if (FW->Magic == 0x466243b1) {
+    printf(" ===== C1 \n");
     readTUFatbin(Binary, FW);
   } else if (FW->Magic == 0x48495046) {
-    if (!memcmp(FW->Data, HIP_FATBIN_MAGIC_STR, HIP_FATBIN_MAGIC_STR_LEN))
+    printf(" ===== C2 \n");
+    if (!memcmp(FW->Data, HIP_FATBIN_MAGIC_STR, HIP_FATBIN_MAGIC_STR_LEN)) {
+      printf(" ===== C2.1 \n");
       readHIPFatbinEntries(Binary, FW->Data);
-    else
+    }else{
+      printf(" ===== C2.2 \n");
       readTUFatbin(Binary, FW);
+    }
   } else {
+    printf(" ===== C3 \n");
     fprintf(stderr, "Unknown fatbin format");
   }
 
